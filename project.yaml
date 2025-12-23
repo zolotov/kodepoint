@@ -1,0 +1,6 @@
+modules:
+  - lib
+  - generator
+
+plugins:
+  - ./generator
