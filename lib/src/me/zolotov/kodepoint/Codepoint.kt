@@ -114,6 +114,9 @@ value class Codepoint(val codepoint: Int) {
      */
     fun isJavaIdentifierPart(): Boolean = isJavaIdentifierPart(codepoint)
 
+    /**
+     * Returns true if this codepoint is a Unicode control character (category Cc).
+     */
     fun isISOControl(): Boolean = isISOControl(codepoint)
 
 
