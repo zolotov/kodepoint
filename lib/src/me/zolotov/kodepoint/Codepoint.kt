@@ -14,13 +14,43 @@ value class Codepoint(val codepoint: Int) {
         get() = if (codepoint < MIN_SUPPLEMENTARY_CODE_POINT) 1 else 2
 
     internal fun isBmpCodePoint(): Boolean = codepoint ushr 16 == 0
-    fun isLetter(): Boolean = TODO()
-    fun isDigit(): Boolean = TODO()
-    fun isLetterOrDigit(): Boolean = TODO()
-    fun isUpperCase(): Boolean = TODO()
-    fun isLowerCase(): Boolean = TODO()
-    fun toLowerCase(): Codepoint = TODO()
-    fun toUpperCase(): Codepoint = TODO()
+
+    /**
+     * Returns true if this codepoint is a Unicode letter (categories Lu, Ll, Lt, Lm, Lo).
+     */
+    fun isLetter(): Boolean = isLetter(codepoint)
+
+    /**
+     * Returns true if this codepoint is a Unicode decimal digit (category Nd).
+     */
+    fun isDigit(): Boolean = isDigit(codepoint)
+
+    /**
+     * Returns true if this codepoint is a Unicode letter or digit.
+     */
+    fun isLetterOrDigit(): Boolean = isLetterOrDigit(codepoint)
+
+    /**
+     * Returns true if this codepoint is an uppercase letter (category Lu).
+     */
+    fun isUpperCase(): Boolean = isUpperCase(codepoint)
+
+    /**
+     * Returns true if this codepoint is a lowercase letter (category Ll).
+     */
+    fun isLowerCase(): Boolean = isLowerCase(codepoint)
+
+    /**
+     * Converts this codepoint to lowercase.
+     * Returns the same codepoint if no lowercase mapping exists.
+     */
+    fun toLowerCase(): Codepoint = Codepoint(toLowerCase(codepoint))
+
+    /**
+     * Converts this codepoint to uppercase.
+     * Returns the same codepoint if no uppercase mapping exists.
+     */
+    fun toUpperCase(): Codepoint = Codepoint(toUpperCase(codepoint))
 
     /**
      * Converts this code point to its case-folded equivalent for case-insensitive comparison.
@@ -28,33 +58,73 @@ value class Codepoint(val codepoint: Int) {
      * official Unicode case folding mappings.
      * Returns the same code point if no case folding mapping exists.
      */
-    fun toCaseFolded(): Codepoint = TODO()
-
-    fun isSpaceChar(): Boolean = TODO()
-    fun isWhitespace(): Boolean = TODO()
-
-    fun isIdeographic(): Boolean = TODO()
-    fun getUnicodeScript(): UnicodeScript = TODO()
-
-    fun isIdentifierIgnorable(): Boolean = TODO()
-    fun isUnicodeIdentifierStart(): Boolean = TODO()
-    fun isUnicodeIdentifierPart(): Boolean = TODO()
-    fun isJavaIdentifierStart(): Boolean = TODO()
-    fun isJavaIdentifierPart(): Boolean = TODO()
-
-    fun isISOControl(): Boolean {
-        return codepoint in 0x00..0x1F || // 0000..001F    ; Common # Cc  [32] <control-0000>..<control-001F>
-                codepoint in 0x7F..0x9F // 007F..009F    ; Common # Cc  [33] <control-007F>..<control-009F>
+    fun toCaseFolded(): Codepoint {
+        // For simple case folding, lowercase is usually equivalent
+        // Special cases would need separate lookup table
+        return toLowerCase()
     }
 
+    /**
+     * Returns true if this codepoint is a Unicode space character (categories Zs, Zl, Zp).
+     */
+    fun isSpaceChar(): Boolean = isSpaceChar(codepoint)
+
+    /**
+     * Returns true if this codepoint is whitespace according to Java's definition.
+     */
+    fun isWhitespace(): Boolean = isWhitespace(codepoint)
+
+    /**
+     * Returns true if this codepoint is an ideographic character.
+     */
+    fun isIdeographic(): Boolean = isIdeographic(codepoint)
+
+    /**
+     * Returns the Unicode script for this codepoint.
+     */
+    fun getUnicodeScript(): UnicodeScript {
+        // TODO: Implement proper script lookup using ScriptData
+        return UnicodeScript.UNKNOWN
+    }
+
+    /**
+     * Returns true if this codepoint should be ignored in identifiers.
+     * This includes format characters (Cf) and zero-width characters.
+     */
+    fun isIdentifierIgnorable(): Boolean = isIdentifierIgnorable(codepoint)
+
+    /**
+     * Returns true if this codepoint can start a Unicode identifier.
+     */
+    fun isUnicodeIdentifierStart(): Boolean = isUnicodeIdentifierStart(codepoint)
+
+    /**
+     * Returns true if this codepoint can be part of a Unicode identifier (not start).
+     */
+    fun isUnicodeIdentifierPart(): Boolean = isUnicodeIdentifierPart(codepoint)
+
+    /**
+     * Returns true if this codepoint can start a Java identifier.
+     * Java identifiers can start with letters, currency symbols, and connector punctuation.
+     */
+    fun isJavaIdentifierStart(): Boolean = isJavaIdentifierStart(codepoint)
+
+    /**
+     * Returns true if this codepoint can be part of a Java identifier (not start).
+     */
+    fun isJavaIdentifierPart(): Boolean = isJavaIdentifierPart(codepoint)
+
+    fun isISOControl(): Boolean = isISOControl(codepoint)
+
+
     fun asString(): String {
-        return codePointsToStringPlatformSpecific(codepoint)
+        return codepointsToString(codepoint)
     }
 
     override fun toString(): String = "Codepoint(0x${codepoint.toString(16).uppercase()})"
 
     companion object {
         fun fromChars(highSurrogate: Char, lowSurrogate: Char): Codepoint =
-            codepointOfPlatformSpecific(highSurrogate, lowSurrogate)
+            codepointOf(highSurrogate, lowSurrogate)
     }
 }

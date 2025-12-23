@@ -1,0 +1,6 @@
+product:
+  type: lib
+  platforms: [jvm, wasmJs]
+
+plugins:
+  generator: enabled

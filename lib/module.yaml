@@ -1,6 +1,9 @@
 product:
   type: lib
-  platforms: [jvm, wasmJs]
+  platforms: [ jvm, wasmJs ]
 
-plugins:
-  generator: enabled
+aliases:
+  - nonJvm: [ wasmJs ]
+
+dependencies@nonJvm:
+  - ../unicode
