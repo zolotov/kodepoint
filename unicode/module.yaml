@@ -4,3 +4,8 @@ product:
 
 plugins:
   generator: enabled
+
+settings:
+  jvm:
+    jdk:
+      version: 24
