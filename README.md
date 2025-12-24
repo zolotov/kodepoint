@@ -34,6 +34,50 @@ Amper build plugin that generates Unicode property lookup tables at build time.
 - **JVM**
 - **WASM**
 
+## JVM Compatibility
+
+This library aims to provide consistent Unicode behavior across all platforms. 
+On non-JVM platforms, it uses generated Unicode Character Database lookup tables. 
+The implementation is validated against JVM's `java.lang.Character` methods.
+
+### Fully Compatible Functions
+
+The following functions produce **identical results** to JVM's `Character` class for all 1,114,112 Unicode codepoints:
+
+- `isLetter()`, `isDigit()`, `isLetterOrDigit()`
+- `isUpperCase()`, `isLowerCase()`
+- `toLowerCase()`, `toUpperCase()`
+- `isSpaceChar()`
+- `isIdeographic()`
+- `isIdentifierIgnorable()`
+- `isISOControl()`
+- `isJavaIdentifierStart()`, `isJavaIdentifierPart()` - generated directly from JVM's `Character` class during build
+
+### Known Differences
+
+Some functions have intentional differences from JVM behavior to maintain Unicode standard compliance:
+
+#### `isWhitespace()`
+
+This library uses Unicode's `White_Space` property, which differs from Java's `Character.isWhitespace()`:
+
+| Codepoint | Character | Unicode White_Space | Java isWhitespace |
+|-----------|-----------|---------------------|-------------------|
+| U+001C | File Separator | `false` | `true` |
+| U+001D | Group Separator | `false` | `true` |
+| U+001E | Record Separator | `false` | `true` |
+| U+001F | Unit Separator | `false` | `true` |
+| U+0085 | Next Line (NEL) | `true` | `false` |
+| U+00A0 | No-Break Space | `true` | `false` |
+| U+2007 | Figure Space | `true` | `false` |
+| U+202F | Narrow No-Break Space | `true` | `false` |
+
+Java excludes non-breaking spaces from `isWhitespace()` and includes control characters that Unicode does not classify as whitespace.
+
+#### `isUnicodeIdentifierStart()` / `isUnicodeIdentifierPart()`
+
+JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this character is not in Unicode's `ID_Start` or `ID_Continue` properties. This library follows the Unicode standard.
+
 ## Building
 
 ```bash

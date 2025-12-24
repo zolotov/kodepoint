@@ -14,72 +14,86 @@ import kotlin.test.fail
 class ValidationTest {
     companion object {
         private const val MAX_CODE_POINT = 0x10FFFF
+        private const val VERTICAL_TILDA = 0x2E2F
+
+        private val WHITESPACE_JVM_ONLY = setOf(0x001C, 0x001D, 0x001E, 0x001F)
+        private val WHITESPACE_UNICODE_ONLY = setOf(0x0085, 0x00A0, 0x2007, 0x202F)
     }
 
     @Test
-    fun isLetter() = doTest("isLetter", CodepointFunctions::isLetter, Character::isLetter)
+    fun isLetter() = doTest("isLetter", Codepoints::isLetter, Character::isLetter)
     @Test
-    fun isDigit() = doTest("isDigit", CodepointFunctions::isDigit, Character::isDigit)
+    fun isDigit() = doTest("isDigit", Codepoints::isDigit, Character::isDigit)
     @Test
-    fun isLetterOrDigit() = doTest("isLetterOrDigit", CodepointFunctions::isLetterOrDigit, Character::isLetterOrDigit)
+    fun isLetterOrDigit() = doTest("isLetterOrDigit", Codepoints::isLetterOrDigit, Character::isLetterOrDigit)
     @Test
-    fun isUpperCase() = doTest("isUpperCase", CodepointFunctions::isUpperCase, Character::isUpperCase)
+    fun isUpperCase() = doTest("isUpperCase", Codepoints::isUpperCase, Character::isUpperCase)
     @Test
-    fun isLowerCase() = doTest("isLowerCase", CodepointFunctions::isLowerCase, Character::isLowerCase)
+    fun isLowerCase() = doTest("isLowerCase", Codepoints::isLowerCase, Character::isLowerCase)
     @Test
-    fun toLowerCase() = doTest("toLowerCase", CodepointFunctions::toLowerCase, Character::toLowerCase)
+    fun toLowerCase() = doTest("toLowerCase", Codepoints::toLowerCase, Character::toLowerCase)
     @Test
-    fun toUpperCase() = doTest("toUpperCase", CodepointFunctions::toUpperCase, Character::toUpperCase)
+    fun toUpperCase() = doTest("toUpperCase", Codepoints::toUpperCase, Character::toUpperCase)
     @Test
-    fun isSpaceChar() = doTest("isSpaceChar", CodepointFunctions::isSpaceChar, Character::isSpaceChar)
+    fun isSpaceChar() = doTest("isSpaceChar", Codepoints::isSpaceChar, Character::isSpaceChar)
+
     @Test
-    fun isWhitespace() = doTest("isWhitespace", CodepointFunctions::isWhitespace, Character::isWhitespace)
+    fun isWhitespace() = doTest(
+        "isWhitespace",
+        // Unicode White_Space includes some chars that Java doesn't consider whitespace
+        { Codepoints.isWhitespace(it) || it in WHITESPACE_JVM_ONLY },
+        // Java's isWhitespace includes some chars that Unicode doesn't have in White_Space
+        { Character.isWhitespace(it) || it in WHITESPACE_UNICODE_ONLY }
+    )
+
     @Test
-    fun isIdeographic() = doTest("isIdeographic", CodepointFunctions::isIdeographic, Character::isIdeographic)
+    fun isIdeographic() = doTest("isIdeographic", Codepoints::isIdeographic, Character::isIdeographic)
     @Test
-    fun isIdentifierIgnorable() = doTest("isIdentifierIgnorable", CodepointFunctions::isIdentifierIgnorable, Character::isIdentifierIgnorable)
+    fun isIdentifierIgnorable() =
+        doTest("isIdentifierIgnorable", Codepoints::isIdentifierIgnorable, Character::isIdentifierIgnorable)
 
     @Test
     fun isUnicodeIdentifierStart() = doTest(
         "isUnicodeIdentifierStart",
-        CodepointFunctions::isUnicodeIdentifierStart,
+        { Codepoints.isUnicodeIdentifierStart(it) || it == VERTICAL_TILDA }, // `VERTICAL_TILDA` is added to JVM for backward compatibility
         Character::isUnicodeIdentifierStart
     )
 
     @Test
     fun isUnicodeIdentifierPart() = doTest(
         "isUnicodeIdentifierPart",
-        CodepointFunctions::isUnicodeIdentifierPart,
+        { Codepoints.isUnicodeIdentifierPart(it) || Codepoints.isIdentifierIgnorable(it) || it == VERTICAL_TILDA }, // `ignorable` and `VERTICAL_TILDA` added to JVM for backward compatibility
         Character::isUnicodeIdentifierPart
     )
 
     @Test
     fun isJavaIdentifierStart() =
-        doTest("isJavaIdentifierStart", CodepointFunctions::isJavaIdentifierStart, Character::isJavaIdentifierStart)
+        doTest("isJavaIdentifierStart", Codepoints::isJavaIdentifierStart, Character::isJavaIdentifierStart)
 
     @Test
     fun isJavaIdentifierPart() =
-        doTest("isJavaIdentifierPart", CodepointFunctions::isJavaIdentifierPart, Character::isJavaIdentifierPart)
+        doTest("isJavaIdentifierPart", Codepoints::isJavaIdentifierPart, Character::isJavaIdentifierPart)
 
     @Test
-    fun isISOControl() = doTest("isISOControl", CodepointFunctions::isISOControl, Character::isISOControl)
+    fun isISOControl() = doTest("isISOControl", Codepoints::isISOControl, Character::isISOControl)
 
     private data class Mismatch(
         val codepoint: Int,
-        val expected: Any,
-        val actual: Any
+        val jvm: Any,
+        val multiplatform: Any
     ) {
         override fun toString(): String {
-            return "U+${codepoint.toString(16).uppercase().padStart(4, '0')}: expected=$expected, actual=$actual"
+            val codepoint = "U+${codepoint.toString(16).uppercase().padStart(4, '0')}"
+            return "$codepoint [https://www.compart.com/en/unicode/$codepoint]: jvm=$jvm, multiplatform=$multiplatform"
         }
     }
 
     private fun doTest(name: String, multiplatformFn: (Int) -> Any, jvmFn: (Int) -> Any) {
         val mismatches = (0..MAX_CODE_POINT).mapNotNull { codepoint ->
-            val expected = jvmFn(codepoint)
-            val actual = CodepointFunctions.isLetter(codepoint)
-            if (expected != actual) {
-                Mismatch(codepoint, expected, actual)
+            val jvm = jvmFn(codepoint)
+            val multiplatform = multiplatformFn(codepoint)
+            if (jvm != multiplatform) {
+                Mismatch(codepoint, jvm, multiplatform)
             } else {
                 null
             }
