@@ -28,6 +28,39 @@ fun CharSequence.codePointBefore(index: Int): Codepoint {
   return Codepoint(secondChar.code)
 }
 
+inline fun CharSequence.forEachCodepoint(f: (Codepoint) -> Unit) {
+    var i = 0
+    val len = length
+    while (i < len) {
+        val c1 = get(i++)
+        if (c1.isHighSurrogate() && i < len) {
+            val c2 = get(i)
+            if (c2.isLowSurrogate()) {
+                i++
+                f(Codepoint.fromChars(c1, c2))
+                continue
+            }
+        }
+        f(Codepoint(c1.code))
+    }
+}
+
+inline fun CharSequence.forEachCodepointReversed(f: (Codepoint) -> Unit) {
+    var i = length - 1
+    while (i >= 0) {
+        val c2 = get(i--)
+        if (c2.isLowSurrogate() && i >= 0) {
+            val c1 = get(i)
+            if (c1.isHighSurrogate()) {
+                i--
+                f(Codepoint.fromChars(c1, c2))
+                continue
+            }
+        }
+        f(Codepoint(c2.code))
+    }
+}
+
 fun CharSequence.codepoints(offset: Int, direction: Direction = Direction.FORWARD): Iterator<Codepoint> =
   when (direction) {
     Direction.FORWARD -> iterator {
