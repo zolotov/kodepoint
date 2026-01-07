@@ -1,4 +1,5 @@
 .idea/
-.amper/
+.gradle/
 build/
-**/generated
+kotlin-js-store/
+.kotlin/

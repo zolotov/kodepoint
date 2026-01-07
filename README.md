@@ -22,12 +22,19 @@ Core library providing Unicode character functionality through `@JvmInline value
 - Surrogate pair handling for supplementary Unicode characters
 - Extensions for `CharSequence` and `Appendable`
 
-### `generator` - Code Generation Plugin
+### `unicode` - Unicode Data Module
 
-Amper build plugin that generates Unicode property lookup tables at build time.
+Contains generated Unicode property lookup tables.
 
-- Unicode database processing
-- Code generation at `build/tasks/_lib_generate@generator/`
+- Unicode database processing and lookup tables
+- Used by `lib` for non-JVM platforms
+
+### `common` - Shared Module
+
+Contains `UnicodeScript` enum accessible from both `unicode` and `lib` modules.
+
+- Unicode script definitions generated from Unicode Character Database
+- Shared across all platform-specific implementations
 
 ## Platforms
 
@@ -82,10 +89,10 @@ JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this charac
 
 ```bash
 # Build all modules
-./amper build
+./gradlew build
 
 # Run tests
-./amper test
+./gradlew allTests
 ```
 
 ## Usage
@@ -96,7 +103,6 @@ import me.zolotov.kodepoint.*
 // Create a Codepoint
 val codepoint = Codepoint(0x1F600) // 😀
 
-// Character properties (implementation pending)
 val isLetter = codepoint.isLetter()
 val upperCase = codepoint.toUpperCase()
 

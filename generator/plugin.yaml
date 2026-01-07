@@ -1,7 +1,0 @@
-tasks:
-  generate:
-    action: !me.zolotov.kodepoint.generator.generate
-      generatedSourceDir: ${taskOutputDir}
-    markOutputsAs:
-      - path: ${action.generatedSourceDir}
-        kind: kotlin-sources

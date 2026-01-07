@@ -1,9 +1,0 @@
-product:
-  type: lib
-  platforms: [ jvm, wasmJs ]
-
-aliases:
-  - nonJvm: [ wasmJs ]
-
-dependencies@nonJvm:
-  - ../unicode

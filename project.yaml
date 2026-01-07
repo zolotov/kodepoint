@@ -1,7 +1,0 @@
-modules:
-  - lib
-  - generator
-  - unicode
-
-plugins:
-  - ./generator
