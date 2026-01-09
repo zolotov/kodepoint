@@ -1,0 +1,66 @@
+import kotlinx.benchmark.gradle.JvmBenchmarkTarget
+
+plugins {
+    id("kodepoint.multiplatform")
+    kotlin("plugin.allopen") version "2.0.20"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
+}
+
+allOpen {
+    annotation("org.openjdk.jmh.annotations.State")
+}
+
+kotlin {
+    jvmToolchain(24)
+    applyDefaultHierarchyTemplate()
+    sourceSets {
+        @Suppress("OPT_IN_USAGE")
+        wasmJs {
+            nodejs()
+            binaries.executable()
+        }
+        commonMain {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.15")
+                implementation(project(":unicode"))
+                implementation(project(":common"))
+            }
+        }
+    }
+}
+
+// Fix implicit dependency issues with Gradle 9.x and kotlinx-benchmark wasmJs
+// https://docs.gradle.org/current/userguide/validation_problems.html#implicit_dependency
+afterEvaluate {
+    tasks.findByName("wasmJsBrowserProductionWebpack")?.dependsOn("wasmJsProductionLibraryCompileSync")
+    tasks.matching { it.name.contains("wasmJs") && it.name.contains("LibraryDistribution") }.configureEach {
+        dependsOn("wasmJsProductionExecutableCompileSync")
+    }
+}
+
+benchmark {
+    configurations {
+        named("main") {
+            warmups = 5
+            iterations = 5
+            iterationTime = 1000
+            iterationTimeUnit = "ms"
+            mode = "thrpt"
+            outputTimeUnit = "us"
+        }
+
+        register("quick") {
+            warmups = 2
+            iterations = 3
+            iterationTime = 500
+            iterationTimeUnit = "ms"
+        }
+    }
+    targets {
+        register("jvm") {
+            this as JvmBenchmarkTarget
+            jmhVersion  = "1.37"
+        }
+        register("wasmJs")
+    }
+}

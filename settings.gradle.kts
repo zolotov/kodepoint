@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 include(":common")
 include(":lib")
 include(":unicode")
+include(":benchmarks")

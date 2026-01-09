@@ -95,6 +95,31 @@ JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this charac
 ./gradlew allTests
 ```
 
+## Benchmarks
+
+```bash
+# Full benchmarks (5 warmups, 5 iterations)
+./gradlew :benchmarks:benchmark
+
+# Quick benchmarks (2 warmups, 3 iterations)
+./gradlew :benchmarks:quickBenchmark
+```
+
+### Benchmark Categories
+
+**CodepointsBenchmark** – Measures performance across different character sets:
+- ASCII characters (fast-path optimization)
+- Latin Extended (U+0100-024F)
+- Greek (U+0370-03FF)
+- CJK ideographs (U+4E00-4E7F)
+- Mixed workloads (80/20, 50/50, 20/80 ASCII/Unicode ratios)
+
+**JvmComparisonBenchmark** – Direct comparison with `java.lang.Character`:
+- `isLetter`, `isDigit`, `toLowerCase`, `toUpperCase`
+- `isWhitespace`, `isJavaIdentifierStart`, `isJavaIdentifierPart`
+
+Results are written to `benchmarks/build/reports/benchmarks/`.
+
 ## Usage
 
 ```kotlin
