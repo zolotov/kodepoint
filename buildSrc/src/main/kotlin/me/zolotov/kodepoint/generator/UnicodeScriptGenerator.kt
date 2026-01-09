@@ -41,7 +41,7 @@ fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: St
     outputDir.deleteRecursively()
     outputDir.resolve("me/zolotov/kodepoint/script/UnicodeScript.kt")
         .createParentDirectories()
-        .bufferedWriter(options = arrayOf(StandardOpenOption.CREATE)).use { writer ->
+        .bufferedWriter().use { writer ->
             generator.writeTo(writer)
             println("Generated UnicodeScript.kt with ${scriptNames.size} scripts")
             println("Generation complete!")
@@ -83,15 +83,3 @@ private fun extractScriptNamesInCodepointOrder(scripts: Map<Int, String>): List<
 }
 
 private fun String.asEnumValue(): String = uppercase().replace('-', '_')
-
-/**
- * Parse a codepoint range like "0041..005A" or single codepoint like "0041".
- */
-private fun parseRange(s: String): IntRange {
-    val values = s.split("..").map { it.trim().toInt(16) }
-    return when (values.size) {
-        2 -> values[0]..values[1]
-        1 -> values[0]..values[0]
-        else -> error("Invalid range: $s")
-    }
-}
