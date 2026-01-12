@@ -25,6 +25,8 @@ object Codepoints {
         (props and CharacterData.CATEGORY_MASK) ushr CharacterData.CATEGORY_SHIFT
 
     private fun getCaseDelta(props: Int): Int {
+        // Decode signed 10-bit case delta from packed properties.
+        // Values 0x000-0x1FF are positive (0 to 511), 0x200-0x3FF are negative (-512 to -1)
         val delta = props and CharacterData.CASE_DELTA_MASK
         return if (delta >= 0x200) delta - 0x400 else delta
     }
@@ -91,7 +93,9 @@ object Codepoints {
 
         val props = CharacterData.getProperties(codepoint)
 
-        // Special handling for titlecase letters (Lt)
+        // Special handling for titlecase letters (Lt) - these map to their uppercase variants
+        // U+01C5 Dž -> U+01C4 DŽ, U+01C8 Lj -> U+01C7 LJ
+        // U+01CB Nj -> U+01CA NJ, U+01F2 Dz -> U+01F1 DZ
         if (getCategory(props) == CharacterData.CAT_LT) {
             return when (codepoint) {
                 0x01C5, 0x01C8, 0x01CB, 0x01F2 -> codepoint - 1
@@ -127,9 +131,14 @@ object Codepoints {
     }
 
     fun isIdentifierIgnorable(codepoint: Int): Boolean {
+        // Control characters that are ignorable in identifiers:
+        // U+0000..U+0008: <control> (NUL through BACKSPACE)
+        // U+000E..U+001B: <control> (SHIFT OUT through ESCAPE)
+        // U+007F..U+009F: <control> (DELETE through APPLICATION PROGRAM COMMAND)
         if (codepoint <= 0x08 || (codepoint in 0x0E..0x1B) || (codepoint in 0x7F..0x9F)) {
             return true
         }
+        // Also ignorable: Format characters (category Cf)
         val props = CharacterData.getProperties(codepoint)
         return getCategory(props) == CharacterData.CAT_CF
     }
@@ -155,6 +164,7 @@ object Codepoints {
     }
 
     fun isISOControl(codepoint: Int): Boolean =
+        // C0 control codes (U+0000..U+001F) and C1 control codes (U+007F..U+009F)
         codepoint in 0x00..0x1F || codepoint in 0x7F..0x9F
 
     fun getUnicodeScript(codepoint: Int): UnicodeScript = ScriptData.getScript(codepoint)
