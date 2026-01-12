@@ -38,3 +38,9 @@ val generateUnicodeData by tasks.registering {
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     dependsOn(generateUnicodeData)
 }
+
+tasks.matching {
+    it.name.endsWith("sourcesjar", ignoreCase = true) || it.name.contains("dokka")
+}.configureEach {
+    dependsOn(generateUnicodeData)
+}

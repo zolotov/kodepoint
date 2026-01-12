@@ -21,7 +21,7 @@ Add the following dependency to your project:
 
 ```kotlin
 dependencies {
-    implementation("me.zolotov:kodepoint:$version")
+    implementation("me.zolotov.kodepoint:kodepoint:$version")
 }
 ```
 

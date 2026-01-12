@@ -6,6 +6,10 @@ plugins {
     id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
 }
 
+tasks.withType<PublishToMavenRepository>().configureEach { enabled = false }
+tasks.withType<PublishToMavenLocal>().configureEach { enabled = false }
+tasks.withType<Sign>().configureEach { enabled = false }
+
 allOpen {
     annotation("org.openjdk.jmh.annotations.State")
 }

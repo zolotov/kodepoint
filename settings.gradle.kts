@@ -19,5 +19,6 @@ dependencyResolutionManagement {
 
 include(":common")
 include(":lib")
+project(":lib").name = "kodepoint"
 include(":unicode")
 include(":benchmarks")
