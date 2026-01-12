@@ -1,5 +1,9 @@
 # Kodepoint - Kotlin Multiplatform Unicode Library
 
+[![Maven central version](https://img.shields.io/maven-central/v/me.zolotov.kodepoint/kodepoint.svg)](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/zolotov/kodepoint/test.yml)](https://github.com/zolotov/kodepoint/actions/workflows/test.yml)
+[![GitHub License](https://img.shields.io/github/license/zolotov/kodepoint)](https://github.com/zolotov/kodepoint/blob/main/LICENSE)
+
 A Kotlin multiplatform library providing limited Unicode Character Database functionality.
 
 > **Note**: This project serves as a temporary solution until [KT-23251 Extend Unicode support in Kotlin common](https://youtrack.jetbrains.com/issue/KT-23251) and [KT-24908 CodePoint inline class](https://youtrack.jetbrains.com/issue/KT-24908) are implemented in the Kotlin standard library.
@@ -10,6 +14,16 @@ Kodepoint provides Unicode character property access across multiple platforms:
 
 - **JVM**: Uses Java's `Character` class
 - **WASM**: Pure Kotlin implementations
+
+## Installation
+
+Add the following dependency to your project:
+
+```kotlin
+dependencies {
+    implementation("me.zolotov:kodepoint:$version")
+}
+```
 
 ## Architecture
 
