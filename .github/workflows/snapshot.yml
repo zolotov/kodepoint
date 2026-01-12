@@ -1,0 +1,48 @@
+name: Snapshot
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version"
+        required: true
+
+run-name: "Publish ${{ inputs.version }}-SNAPSHOT"
+
+jobs:
+  build-native:
+    uses: ./.github/workflows/build.yaml
+
+  publish:
+    runs-on: ubuntu-22.04
+    needs: build-native
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 24
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ inputs.github-token }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSWORD }}
+
+          # Properties expected by the gradle-maven-publish-plugin
+          # https://vanniktech.github.io/gradle-maven-publish-plugin/central/#__tabbed_5_2
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_TOKEN_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_TOKEN_PASSWORD }}
+        shell: bash
+        run: ./gradlew check publishAllPublicationsToMavenCentralRepository -Pversion=${{ inputs.version }}-SNAPSHOT --no-configuration-cache
