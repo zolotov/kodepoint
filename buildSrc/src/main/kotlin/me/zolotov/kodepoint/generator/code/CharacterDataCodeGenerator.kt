@@ -121,13 +121,16 @@ private fun generatePlaneCharacterData(
             encodedString16Property("BLOCK_INDEX", indexTable)
             emptyLine()
 
-            encodedString32Property("PROPERTIES", propertyTable)
+            intArrayProperty(
+                "PROPERTIES",
+                propertyTable.map { "0x${it.toUInt().toString(16).uppercase()}" }
+            )
             emptyLine()
 
             function("getProperties", listOf("offset" to "Int"), "Int") {
                 variable("blockNum", "BLOCK_INDEX_DATA[offset ushr BLOCK_SHIFT].code")
-                variable("propIdx", "(blockNum * BLOCK_SIZE + (offset and BLOCK_MASK)) * 2")
-                returnStatement("(PROPERTIES_DATA[propIdx].code shl 16) or PROPERTIES_DATA[propIdx + 1].code")
+                variable("propIdx", "blockNum * BLOCK_SIZE + (offset and BLOCK_MASK)")
+                returnStatement("PROPERTIES[propIdx]")
             }
         }
     }.writeTo(writer)

@@ -124,43 +124,14 @@ class ObjectBuilder(private val content: StringBuilder, private val indent: Stri
 
     fun encodedString16Property(name: String, data: IntArray, private: Boolean = true, chunkSize: Int = 8000) {
         val encoded = buildString {
-            for (value in data) {
-                append((value and 0xFFFF).toChar())
+            for ((index, value) in data.withIndex()) {
+                require(value in 0..0xFFFF) {
+                    "Value at index $index (0x${value.toString(16)}) doesn't fit in 16-bit char (0x0000-0xFFFF) for property $name"
+                }
+                append(value.toChar())
             }
         }
         stringProperty("${name}_DATA", encoded, private, const = encoded.length <= chunkSize, chunkSize = chunkSize)
-    }
-
-    fun encodedString32Property(name: String, data: IntArray, private: Boolean = true, chunkSize: Int = 8000) {
-        val encoded = buildString {
-            for (value in data) {
-                append(((value ushr 16) and 0xFFFF).toChar())
-                append((value and 0xFFFF).toChar())
-            }
-        }
-        stringProperty("${name}_DATA", encoded, private, const = encoded.length <= chunkSize, chunkSize = chunkSize)
-    }
-
-    fun byteArrayFromStringProperty(name: String, data: IntArray, private: Boolean = true, chunkSize: Int = 8000) {
-        val encoded = buildString {
-            for (value in data) {
-                append((value and 0xFF).toChar())
-            }
-        }
-        val visibility = if (private) "private " else ""
-
-        // Chunk before escaping to avoid splitting escape sequences
-        if (encoded.length <= chunkSize) {
-            val escaped = escapeForKotlin(encoded)
-            content.appendLine("$indent${visibility}val ${name}_DATA: ByteArray = \"$escaped\".let { s -> ByteArray(s.length) { s[it].code.toByte() } }")
-        } else {
-            val chunks = encoded.chunked(chunkSize)
-            content.appendLine("$indent${visibility}val ${name}_DATA: ByteArray = buildString {")
-            for (chunk in chunks) {
-                content.appendLine("$indent    append(\"${escapeForKotlin(chunk)}\")")
-            }
-            content.appendLine("$indent}.let { s -> ByteArray(s.length) { s[it].code.toByte() } }")
-        }
     }
 
     fun intArrayProperty(

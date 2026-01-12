@@ -124,12 +124,15 @@ private fun generatePlaneScriptData(
             encodedString16Property("BLOCK_INDEX", indexTable)
             emptyLine()
 
-            byteArrayFromStringProperty("SCRIPTS", scriptTable)
+            byteArrayProperty(
+                "SCRIPTS",
+                scriptTable.map { it.toString() }
+            )
             emptyLine()
 
             function("getScriptId", listOf("offset" to "Int"), "Int") {
                 variable("blockNum", "BLOCK_INDEX_DATA[offset ushr BLOCK_SHIFT].code")
-                returnStatement("SCRIPTS_DATA[blockNum * BLOCK_SIZE + (offset and BLOCK_MASK)].toInt() and 0xFF")
+                returnStatement("SCRIPTS[blockNum * BLOCK_SIZE + (offset and BLOCK_MASK)].toInt() and 0xFF")
             }
         }
     }.writeTo(writer)
