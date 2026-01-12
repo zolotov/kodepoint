@@ -27,7 +27,6 @@ fun findOptimalLookupTable(data: IntArray, totalBits: Int, propertyBytes: Int): 
     return best ?: error("No valid decomposition found")
 }
 
-
 private fun buildTables(data: IntArray, indexBits: Int, blockBits: Int, propertyBytes: Int): LookupTable {
     val dedup = deduplicateBlocks(data, 1 shl indexBits)
     val indexTable = dedup.indices

@@ -1,10 +1,19 @@
 package me.zolotov.kodepoint.generator
 
 /**
- * Builds property tables for all Unicode planes.
+ * Builds property tables for all Unicode planes using byte indices for memory efficiency.
+ * Returns a PropertyTableBuildResult with the global value lookup table.
  */
-fun buildPropertyTables(characterProperties: IntArray): List<PlaneTableResult> {
-    return PLANES.map { plane ->
+fun buildPropertyTables(characterProperties: IntArray): PropertyTableBuildResult {
+    // Build global value lookup from all unique values
+    val uniqueCharacterProperties = characterProperties.toSet().toList().sorted().toIntArray()
+    println("  Global unique values: ${uniqueCharacterProperties.size}")
+
+    val propertyToIndex = uniqueCharacterProperties.withIndex().associate { it.value to it.index }
+
+    val latin1Properties = characterProperties.sliceArray(0..255)
+
+    val planeResults = PLANES.map { plane ->
         val paddedSize = 1 shl plane.totalBits
         val properties = IntArray(paddedSize)
         characterProperties.copyInto(properties, 0, plane.startCodepoint, plane.endCodepoint + 1)
@@ -14,12 +23,19 @@ fun buildPropertyTables(characterProperties: IntArray): List<PlaneTableResult> {
                 println("  ${plane.name}: sparse (${ranges.size} ranges), size=${it.size} bytes")
             }
         } else {
-            val table = findOptimalLookupTable(properties, plane.totalBits, 4)
+            // Convert to indices and use standard lookup table
+            val indexedData = properties.map { propertyToIndex[it]!! }.toIntArray()
+            val table = findOptimalLookupTable(indexedData, plane.totalBits, 1)
             PlaneTableResult.Table(plane, table).also {
-                println("  ${plane.name}: indexBits=${table.indexBits}, blockBits=${table.blockBits}, size=${table.totalSize} bytes")
+                val dataSize = table.dataTable.size
+                val indexSize = table.indexTable.size * 2
+                println("  ${plane.name}: indexBits=${table.indexBits}, blockBits=${table.blockBits}, " +
+                    "index=${indexSize}b, data=${dataSize}b, total=${table.totalSize}b")
             }
         }
     }
+
+    return PropertyTableBuildResult(latin1Properties, planeResults, uniqueCharacterProperties)
 }
 
 /**

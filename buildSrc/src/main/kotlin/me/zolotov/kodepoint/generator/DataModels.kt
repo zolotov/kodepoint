@@ -75,3 +75,9 @@ sealed interface PlaneTableResult {
         override val size: Int = ranges.size * 12  // 4 bytes start + 4 bytes end + 4 bytes properties
     }
 }
+
+class PropertyTableBuildResult(
+    val latin1Properties: IntArray,
+    val planeResults: List<PlaneTableResult>,
+    val uniqueCharacterProperties: IntArray
+)

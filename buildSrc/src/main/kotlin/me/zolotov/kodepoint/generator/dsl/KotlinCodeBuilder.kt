@@ -134,6 +134,21 @@ class ObjectBuilder(private val content: StringBuilder, private val indent: Stri
         stringProperty("${name}_DATA", encoded, private, const = encoded.length <= chunkSize, chunkSize = chunkSize)
     }
 
+    /**
+     * Encodes values (0-255) as a String for efficient storage.
+     * Throws if any value is outside the 0-255 range.
+     * At runtime, decode using: string[index].code
+     */
+    fun encodedString8Property(name: String, data: IntArray, private: Boolean = true, chunkSize: Int = 8000) {
+        val encoded = buildString {
+            for (value in data) {
+                require(value in 0..255) { "Value $value is outside the valid range 0-255 for 8-bit encoding" }
+                append(value.toChar())
+            }
+        }
+        stringProperty("${name}_DATA", encoded, private, const = encoded.length <= chunkSize, chunkSize = chunkSize)
+    }
+
     fun intArrayProperty(
         name: String,
         values: List<String>,

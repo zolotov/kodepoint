@@ -48,10 +48,10 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
     val characterProperties = unicodeData.characters.map { cp -> PropertyPacker.pack(cp) }.toIntArray()
     println("Packed ${characterProperties.size} character properties")
 
-    println("Packing properties by plane...")
-    val planeResults = buildPropertyTables(characterProperties)
-    val totalPropertySize = planeResults.sumOf { it.size }
-    println("Total property table size: $totalPropertySize bytes")
+    println("Packing properties by plane (with byte indices)...")
+    val propertyBuildResult = buildPropertyTables(characterProperties)
+    val totalPropertySize = propertyBuildResult.planeResults.sumOf { it.size } + propertyBuildResult.uniqueCharacterProperties.size * 4
+    println("Total property table size: $totalPropertySize bytes (includes ${propertyBuildResult.uniqueCharacterProperties.size * 4}b value lookup)")
 
     println("Build large case deltas...")
     val largeCaseDeltaRanges = buildLargeCaseDeltas(unicodeData.characters, characterProperties)
@@ -81,8 +81,7 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
     outputDir.deleteRecursively()
     val generatedDir = outputDir.resolve("me/zolotov/kodepoint/generated").createDirectories()
 
-    val latin1Properties = characterProperties.sliceArray(0..255)
-    generateCharacterDataClasses(generatedDir, latin1Properties, additionalComment, planeResults, largeCaseDeltaRanges)
+    generateCharacterDataClasses(generatedDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
     generateScriptDataClasses(generatedDir, scriptBuildResult, additionalComment)
 
     println("Generation complete!")

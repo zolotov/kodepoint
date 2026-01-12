@@ -2,6 +2,7 @@ package me.zolotov.kodepoint.generator.code
 
 import me.zolotov.kodepoint.generator.LastCaseDeltaRanges
 import me.zolotov.kodepoint.generator.PlaneTableResult
+import me.zolotov.kodepoint.generator.PropertyTableBuildResult
 import me.zolotov.kodepoint.generator.UNICODE_VERSION
 import me.zolotov.kodepoint.generator.dsl.kotlinFile
 import java.io.Writer
@@ -10,19 +11,26 @@ import kotlin.io.path.bufferedWriter
 
 fun generateCharacterDataClasses(
     outputDir: Path,
-    latin1Properties: IntArray,
+    propertyBuildResult: PropertyTableBuildResult,
     additionalComment: String,
-    planeResults: List<PlaneTableResult>,
     largeCaseDeltaRanges: LastCaseDeltaRanges
 ) {
+    val latin1Properties = propertyBuildResult.latin1Properties
+    val uniqueCharacterProperties = propertyBuildResult.uniqueCharacterProperties
+    val planeResults = propertyBuildResult.planeResults
+
+    // Build value-to-index mapping for Latin1
+    val propertyToIndex = uniqueCharacterProperties.withIndex().associate { it.value to it.index }
+    val latin1Indices = latin1Properties.map { propertyToIndex[it]!! }.toIntArray()
+
     outputDir.resolve("CharacterDataLatin1.kt").bufferedWriter().use { writer ->
         generateLatin1CharacterData(
             writer,
-            latin1Properties,
+            latin1Indices,
             UNICODE_VERSION,
             additionalComment
         )
-        println("Generated CharacterDataLatin1 (256 entries, ${256 * 4} bytes)")
+        println("Generated CharacterDataLatin1 (256 byte indices)")
     }
 
     for (planeResult in planeResults) {
@@ -45,46 +53,41 @@ fun generateCharacterDataClasses(
         }
     }
 
-    // Generate CharacterData facade
+    // Generate CharacterData facade with value lookup table
     outputDir.resolve("CharacterData.kt").bufferedWriter().use { writer ->
         generateCharacterDataFacade(
             writer,
+            uniqueCharacterProperties,
             largeCaseDeltaRanges,
             UNICODE_VERSION,
             additionalComment
         )
-        println("Generated CharacterData facade")
+        println("Generated CharacterData facade (with ${uniqueCharacterProperties.size} value lookup entries)")
     }
 }
 
 private fun generateLatin1CharacterData(
     writer: Writer,
-    properties: IntArray,
+    indices: IntArray,
     unicodeVersion: String,
     additionalComment: String
 ) {
-    require(properties.size == 256) { "Latin1 requires exactly 256 property values" }
+    require(indices.size == 256) { "Latin1 requires exactly 256 index values" }
 
     kotlinFile("me.zolotov.kodepoint.generated") {
         kdoc {
             line("Auto-generated Unicode character property data for Latin-1 (0x00-0xFF).")
             line("Unicode version: $unicodeVersion")
+            line("Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.")
             emptyLine()
             multiline(additionalComment)
         }
 
         objectDeclaration("CharacterDataLatin1") {
-            intArrayProperty(
-                "PROPERTIES",
-                properties.map { "0x${it.toUInt().toString(16).uppercase()}" }
-            )
-            emptyLine()
-
-            expressionFunction(
-                "getProperties",
-                listOf("codepoint" to "Int"),
-                "Int",
-                expression = "PROPERTIES[codepoint]"
+            encodedString8Property(
+                "INDICES",
+                indices,
+                private = false
             )
         }
     }.writeTo(writer)
@@ -102,12 +105,13 @@ private fun generatePlaneCharacterData(
     val blockSize = 1 shl blockBits
     val blockMask = blockSize - 1
     val indexTable = result.indexTable
-    val propertyTable = result.dataTable
+    val propertyIndices = result.dataTable
 
     kotlinFile("me.zolotov.kodepoint.generated") {
         kdoc {
             line("Auto-generated Unicode character property data for ${plane.name}.")
             line("Unicode version: $unicodeVersion")
+            line("Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.")
             emptyLine()
             multiline(additionalComment)
         }
@@ -121,16 +125,14 @@ private fun generatePlaneCharacterData(
             encodedString16Property("BLOCK_INDEX", indexTable)
             emptyLine()
 
-            intArrayProperty(
-                "PROPERTIES",
-                propertyTable.map { "0x${it.toUInt().toString(16).uppercase()}" }
-            )
+            encodedString8Property("INDICES", propertyIndices)
             emptyLine()
 
-            function("getProperties", listOf("offset" to "Int"), "Int") {
+            // Returns byte index into UNIQUE_PROPERTY_VALUES
+            function("getPropertyIndex", listOf("offset" to "Int"), "Int") {
                 variable("blockNum", "BLOCK_INDEX_DATA[offset ushr BLOCK_SHIFT].code")
                 variable("propIdx", "blockNum * BLOCK_SIZE + (offset and BLOCK_MASK)")
-                returnStatement("PROPERTIES[propIdx]")
+                returnStatement("INDICES_DATA[propIdx].code")
             }
         }
     }.writeTo(writer)
@@ -180,6 +182,7 @@ private fun generateSparseCharacterData(
 
 private fun generateCharacterDataFacade(
     writer: Writer,
+    uniqueCharacterProperties: IntArray,
     largeCaseDeltaRanges: LastCaseDeltaRanges,
     unicodeVersion: String,
     additionalComment: String
@@ -227,6 +230,14 @@ private fun generateCharacterDataFacade(
             const("CAT_CF", 27, private = false)
             emptyLine()
 
+            // Value lookup table for byte indices
+            intArrayProperty(
+                "UNIQUE_PROPERTY_VALUES",
+                uniqueCharacterProperties.map { "0x${it.toUInt().toString(16).uppercase()}" },
+                private = false
+            )
+            emptyLine()
+
             // Large case delta ranges
             if (toLowercaseRanges.isNotEmpty()) {
                 intArrayProperty(
@@ -258,12 +269,13 @@ private fun generateCharacterDataFacade(
 
             emptyLine()
 
-            // getProperties function with Latin1 fast-path
+            // getProperties function using UNIQUE_PROPERTY_VALUES
             function("getProperties", listOf("cp" to "Int"), "Int") {
                 returnWhen {
                     branch("cp < 0", "0")
-                    branch("cp < 0x100", "CharacterDataLatin1.getProperties(cp)")
-                    branch("cp <= 0xFFFF", "CharacterDataBMP.getProperties(cp - 0x100)")
+                    branch("cp < 0x100", "UNIQUE_PROPERTY_VALUES[CharacterDataLatin1.INDICES_DATA[cp].code]")
+                    branch("cp <= 0xFFFF", "UNIQUE_PROPERTY_VALUES[CharacterDataBMP.getPropertyIndex(cp - 0x100)]")
+                    // Sparse planes return full property values directly
                     branch("cp <= 0x1FFFF", "CharacterDataSMP.getProperties(cp - 0x10000)")
                     branch("cp <= 0x2FFFF", "CharacterDataSIP.getProperties(cp - 0x20000)")
                     branch("cp <= 0x10FFFF", "CharacterDataSSP.getProperties(cp - 0x30000)")
