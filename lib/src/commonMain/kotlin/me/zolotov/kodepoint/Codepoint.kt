@@ -53,18 +53,6 @@ value class Codepoint(val codepoint: Int) {
     fun toUpperCase(): Codepoint = Codepoint(toUpperCase(codepoint))
 
     /**
-     * Converts this code point to its case-folded equivalent for case-insensitive comparison.
-     * Case folding is more comprehensive than simple lowercase conversion and uses the
-     * official Unicode case folding mappings.
-     * Returns the same code point if no case folding mapping exists.
-     */
-    fun toCaseFolded(): Codepoint {
-        // For simple case folding, lowercase is usually equivalent
-        // Special cases would need separate lookup table
-        return toLowerCase()
-    }
-
-    /**
      * Returns true if this codepoint is a Unicode space character (categories Zs, Zl, Zp).
      */
     fun isSpaceChar(): Boolean = isSpaceChar(codepoint)
