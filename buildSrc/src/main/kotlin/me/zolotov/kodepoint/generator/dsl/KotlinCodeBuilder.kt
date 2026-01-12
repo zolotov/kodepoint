@@ -70,10 +70,6 @@ class KdocBuilder {
         lines.add("")
     }
 
-    fun lines(vararg texts: String) {
-        lines.addAll(texts)
-    }
-
     fun multiline(text: String) {
         text.lineSequence().forEach { lines.add(it) }
     }
@@ -95,7 +91,7 @@ class KdocBuilder {
 class ObjectBuilder(private val content: StringBuilder, private val indent: String) {
     fun const(name: String, value: Any, private: Boolean) {
         val visibility = if (private) "private " else ""
-        content.appendLine("${indent}${visibility}const val $name = ${value.toString()}")
+        content.appendLine("${indent}${visibility}const val $name = $value")
     }
 
     fun emptyLine() {
@@ -228,12 +224,6 @@ class ObjectBuilder(private val content: StringBuilder, private val indent: Stri
 
         content.appendLine("$indent${visibility}fun $name($paramsStr)$returnTypeStr = $expression")
     }
-
-    fun rawCode(code: String) {
-        code.lineSequence().forEach { line ->
-            content.appendLine("$indent$line")
-        }
-    }
 }
 
 @KotlinCodeDsl
@@ -274,12 +264,6 @@ class WhenBuilder(private val content: StringBuilder, private val indent: String
     fun elseCase(result: String) {
         content.appendLine("${indent}else -> $result")
     }
-
-    fun elseCase(block: FunctionBodyBuilder.() -> Unit) {
-        content.appendLine("${indent}else -> {")
-        FunctionBodyBuilder(content, "$indent    ").apply(block)
-        content.appendLine("$indent}")
-    }
 }
 
 @KotlinCodeDsl
@@ -303,9 +287,6 @@ class EnumBuilder(private val content: StringBuilder, private val indent: String
     }
 }
 
-/**
- * Escapes a string for use in Kotlin source code.
- */
 fun escapeForKotlin(s: String): String = buildString(s.length * 2) {
     for (c in s) {
         when {

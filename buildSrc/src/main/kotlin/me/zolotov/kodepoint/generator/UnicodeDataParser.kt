@@ -3,6 +3,11 @@ package me.zolotov.kodepoint.generator
 import java.nio.file.Path
 import kotlin.io.path.forEachLine
 
+class UnicodeData(
+    val characters: Array<CharacterData>,
+    val scripts: Map<Int, String>
+)
+
 /**
  * Parses Unicode data files and builds character property maps.
  */

@@ -31,14 +31,9 @@ data class CharacterData(
     var isJavaIdentifierPart: Boolean = false
 )
 
-class UnicodeData(
-    val characters: Array<CharacterData>,
-    val scripts: Map<Int, String>
-)
-
 data class RangeValue(
-    val startOffset: Int,
-    val endOffset: Int,
+    val startCodepoint: Int,
+    val endCodepoint: Int,
     val value: Int
 )
 

@@ -2,12 +2,12 @@ package me.zolotov.kodepoint.generator
 
 import me.zolotov.kodepoint.generator.dsl.kotlinFile
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import kotlin.io.path.*
 
 /**
  * Generates the UnicodeScript enum from Unicode data.
  */
+@Suppress("unused")
 @OptIn(ExperimentalPathApi::class)
 fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: String) {
     println("Running UnicodeScript Generator...")
@@ -71,8 +71,8 @@ fun parseScriptsFile(scriptsFile: Path): Map<Int, String> {
  * the enum ordinals match the script IDs in the lookup tables.
  */
 private fun extractScriptNamesInCodepointOrder(scripts: Map<Int, String>): List<String> {
-    val scriptNames = mutableListOf<String>("Unknown")
-    val seen = mutableSetOf<String>("Unknown")
+    val scriptNames = mutableListOf("Unknown")
+    val seen = mutableSetOf("Unknown")
     for (cp in 0..MAX_CODEPOINT) {
         val script = scripts[cp] ?: "Unknown"
         if (seen.add(script)) {
