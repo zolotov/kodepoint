@@ -68,34 +68,30 @@ fun CharSequence.codepoints(offset: Int, direction: Direction = Direction.FORWAR
       val len = length
       while (i < len) {
         val c1 = get(i++)
-        if (c1.isHighSurrogate()) {
-          if (i < len) {
-            val c2 = get(i++)
-            if (c2.isLowSurrogate()) {
-              yield(Codepoint.fromChars(c1, c2))
-            }
+        if (c1.isHighSurrogate() && i < len) {
+          val c2 = get(i)
+          if (c2.isLowSurrogate()) {
+            i++
+            yield(Codepoint.fromChars(c1, c2))
+            continue
           }
         }
-        else {
-          yield(Codepoint(c1.code))
-        }
+        yield(Codepoint(c1.code))
       }
     }
     Direction.BACKWARD -> iterator {
       var i = offset - 1
       while (i >= 0) {
         val c2 = get(i--)
-        if (c2.isLowSurrogate()) {
-          if (i >= 0) {
-            val c1 = get(i--)
-            if (c1.isHighSurrogate()) {
-              yield(Codepoint.fromChars(c1, c2))
-            }
+        if (c2.isLowSurrogate() && i >= 0) {
+          val c1 = get(i)
+          if (c1.isHighSurrogate()) {
+            i--
+            yield(Codepoint.fromChars(c1, c2))
+            continue
           }
         }
-        else {
-          yield(Codepoint(c2.code))
-        }
+        yield(Codepoint(c2.code))
       }
     }
   }
