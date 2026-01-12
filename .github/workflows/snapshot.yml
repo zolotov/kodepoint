@@ -13,12 +13,8 @@ on:
 run-name: "Publish ${{ inputs.version }}-SNAPSHOT"
 
 jobs:
-  build-native:
-    uses: ./.github/workflows/build.yaml
-
   publish:
     runs-on: ubuntu-22.04
-    needs: build-native
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
