@@ -1,0 +1,41 @@
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 24
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build with Gradle
+        run: ./gradlew allTests
+
+      - name: Publish Test Report
+        if: always() # Ensure this step runs even if the test step fails
+        uses: dorny/test-reporter@v2
+        with:
+          name: Tests Report
+          path: "**/build/test-results/**/*.xml"
+          reporter: java-junit
