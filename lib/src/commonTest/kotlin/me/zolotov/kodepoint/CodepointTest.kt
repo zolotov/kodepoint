@@ -166,6 +166,186 @@ class CodepointTest {
     }
 
     @Test
+    fun testCharCountBmp() {
+        // BMP characters (U+0000 to U+FFFF) have charCount of 1
+        assertEquals(1, Codepoint(0x0000).charCount)
+        assertEquals(1, Codepoint('A'.code).charCount)
+        assertEquals(1, Codepoint(0x00E9).charCount) // é
+        assertEquals(1, Codepoint(0x4E2D).charCount) // 中
+        assertEquals(1, Codepoint(0xFFFF).charCount) // Last BMP codepoint
+    }
+
+    @Test
+    fun testCharCountSupplementary() {
+        // Supplementary characters (U+10000 and above) have charCount of 2
+        assertEquals(2, Codepoint(0x10000).charCount) // First supplementary
+        assertEquals(2, Codepoint(0x1F600).charCount) // 😀
+        assertEquals(2, Codepoint(0x1F44D).charCount) // 👍
+        assertEquals(2, Codepoint(0x10FFFF).charCount) // Maximum codepoint
+    }
+
+    @Test
+    fun testCharCountPlaneBoundaries() {
+        // Test boundary between BMP and supplementary planes
+        assertEquals(1, Codepoint(0xFFFF).charCount)   // Last BMP
+        assertEquals(2, Codepoint(0x10000).charCount)  // First supplementary (SMP)
+        assertEquals(2, Codepoint(0x1FFFF).charCount)  // Last SMP
+        assertEquals(2, Codepoint(0x20000).charCount)  // First SIP
+    }
+
+    @Test
+    fun testFromCharsBasic() {
+        // U+1F600 (😀) = D83D DE00
+        val cp = Codepoint.fromChars('\uD83D', '\uDE00')
+        assertEquals(0x1F600, cp.codepoint)
+    }
+
+    @Test
+    fun testFromCharsThumbsUp() {
+        // U+1F44D (👍) = D83D DC4D
+        val cp = Codepoint.fromChars('\uD83D', '\uDC4D')
+        assertEquals(0x1F44D, cp.codepoint)
+    }
+
+    @Test
+    fun testFromCharsFirstSupplementary() {
+        // U+10000 = D800 DC00
+        val cp = Codepoint.fromChars('\uD800', '\uDC00')
+        assertEquals(0x10000, cp.codepoint)
+    }
+
+    @Test
+    fun testFromCharsLastSupplementary() {
+        // U+10FFFF = DBFF DFFF
+        val cp = Codepoint.fromChars('\uDBFF', '\uDFFF')
+        assertEquals(0x10FFFF, cp.codepoint)
+    }
+
+    @Test
+    fun testFromCharsRoundTrip() {
+        // Verify that asString and fromChars are consistent
+        val originalCp = Codepoint(0x1F600)
+        val str = originalCp.asString()
+        assertEquals(2, str.length)
+        val reconstructed = Codepoint.fromChars(str[0], str[1])
+        assertEquals(originalCp.codepoint, reconstructed.codepoint)
+    }
+
+    @Test
+    fun testSupplementaryCharacterIsLetter() {
+        // Mathematical Bold Capital A (U+1D400) - is a letter
+        assertTrue(Codepoint(0x1D400).isLetter())
+        // Mathematical Bold Small A (U+1D41A)
+        assertTrue(Codepoint(0x1D41A).isLetter())
+        // Emoji (U+1F600) - not a letter
+        assertFalse(Codepoint(0x1F600).isLetter())
+    }
+
+    @Test
+    fun testSupplementaryCharacterCaseConversion() {
+        // Deseret Capital Letter Long I (U+10400) -> Deseret Small Letter Long I (U+10428)
+        val deseretUppercase = Codepoint(0x10400)
+        val deseretLowercase = Codepoint(0x10428)
+        assertTrue(deseretUppercase.isUpperCase())
+        assertTrue(deseretLowercase.isLowerCase())
+        assertEquals(0x10428, deseretUppercase.toLowerCase().codepoint)
+        assertEquals(0x10400, deseretLowercase.toUpperCase().codepoint)
+    }
+
+    @Test
+    fun testCjkIdeograph() {
+        // CJK Unified Ideograph Extension B (U+20000)
+        val cjkExtB = Codepoint(0x20000)
+        assertTrue(cjkExtB.isLetter())
+        assertTrue(cjkExtB.isIdeographic())
+        assertEquals(UnicodeScript.HAN, cjkExtB.getUnicodeScript())
+    }
+
+    @Test
+    fun testEmojiProperties() {
+        val grinningFace = Codepoint(0x1F600)
+        assertFalse(grinningFace.isLetter())
+        assertFalse(grinningFace.isDigit())
+        assertFalse(grinningFace.isWhitespace())
+        assertFalse(grinningFace.isIdeographic())
+        assertEquals(UnicodeScript.COMMON, grinningFace.getUnicodeScript())
+    }
+
+    @Test
+    fun testBmpBoundary() {
+        val lastBmp = Codepoint(0xFFFF)
+        val firstSupplementary = Codepoint(0x10000)
+
+        assertEquals(1, lastBmp.charCount)
+        assertEquals(2, firstSupplementary.charCount)
+    }
+
+    @Test
+    fun testSmpBoundary() {
+        // Last codepoint of SMP (Supplementary Multilingual Plane)
+        val lastSmp = Codepoint(0x1FFFF)
+        // First codepoint of SIP (Supplementary Ideographic Plane)
+        val firstSip = Codepoint(0x20000)
+
+        assertEquals(2, lastSmp.charCount)
+        assertEquals(2, firstSip.charCount)
+    }
+
+    @Test
+    fun testMaxCodepoint() {
+        val maxCp = Codepoint(0x10FFFF)
+        assertEquals(2, maxCp.charCount)
+        // Should not throw or crash
+        assertFalse(maxCp.isLetter())
+    }
+
+    @Test
+    fun testAsStringSupplementary() {
+        val cp = Codepoint(0x1F600)
+        val str = cp.asString()
+        assertEquals(2, str.length)
+        assertEquals('\uD83D', str[0])
+        assertEquals('\uDE00', str[1])
+    }
+
+    @Test
+    fun testAsStringMaxCodepoint() {
+        val cp = Codepoint(0x10FFFF)
+        val str = cp.asString()
+        assertEquals(2, str.length)
+        assertEquals('\uDBFF', str[0])
+        assertEquals('\uDFFF', str[1])
+    }
+
+    @Test
+    fun testToStringFormat() {
+        assertEquals("Codepoint(0x41)", Codepoint('A'.code).toString())
+        assertEquals("Codepoint(0x1F600)", Codepoint(0x1F600).toString())
+        assertEquals("Codepoint(0x10FFFF)", Codepoint(0x10FFFF).toString())
+    }
+
+    @Test
+    fun testToStringLowercaseHexIsUppercase() {
+        // Verify hex digits are uppercase
+        val cp = Codepoint(0xABCD)
+        assertTrue(cp.toString().contains("ABCD"))
+        assertFalse(cp.toString().contains("abcd"))
+    }
+
+    @Test
+    fun testIsISOControl() {
+        // C0 control codes (U+0000..U+001F)
+        assertTrue(Codepoint(0x0000).isISOControl()) // NUL
+        assertTrue(Codepoint(0x001F).isISOControl()) // Unit Separator
+        assertFalse(Codepoint(0x0020).isISOControl()) // Space - not a control
+
+        // C1 control codes (U+007F..U+009F)
+        assertTrue(Codepoint(0x007F).isISOControl()) // DEL
+        assertTrue(Codepoint(0x009F).isISOControl()) // APC
+        assertFalse(Codepoint(0x00A0).isISOControl()) // NBSP - not a control
+    }
+
+    @Test
     fun testFullAlphabetCaseConversion() {
         for (c in 'A'..'Z') {
             val upperCp = Codepoint(c.code)
