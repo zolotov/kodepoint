@@ -13,7 +13,7 @@ A Kotlin multiplatform library providing limited Unicode Character Database func
 Kodepoint provides Unicode character property access across multiple platforms:
 
 - **JVM**: Uses Java's `Character` class
-- **WASM**: Pure Kotlin implementations
+- **All other targets**: Pure Kotlin implementations with generated Unicode lookup tables
 
 ## Installation
 
@@ -77,10 +77,20 @@ Contains `UnicodeScript` enum accessible from both `unicode` and `lib` modules.
 - Unicode script definitions generated from Unicode Character Database
 - Shared across all platform-specific implementations
 
-## Platforms
+## Supported Targets
 
-- **JVM**
-- **WASM**
+| Platform | Targets |
+|----------|---------|
+| JVM | `jvm` |
+| JavaScript | `js`, `wasmJs` |
+| iOS | `iosArm64`, `iosSimulatorArm64`, `iosX64` |
+| macOS | `macosArm64`, `macosX64` |
+| tvOS | `tvosArm64`, `tvosSimulatorArm64`, `tvosX64` |
+| watchOS | `watchosArm64`, `watchosSimulatorArm64`, `watchosX64` |
+| Linux | `linuxArm64`, `linuxX64` |
+| Windows | `mingwX64` |
+
+> **Note**: Only JVM and WasmJS targets are actively tested. Other targets compile and should work correctly, but have not been thoroughly validated.
 
 ## JVM Compatibility
 
