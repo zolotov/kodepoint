@@ -166,14 +166,14 @@ class CharSequenceExtensionsTest {
     @Test
     fun codepointsForwardAscii() {
         val text = "ABC"
-        val result = text.codepoints(0, Direction.FORWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepoints().map { it.codepoint }.toList()
         assertEquals(listOf('A'.code, 'B'.code, 'C'.code), result)
     }
 
     @Test
     fun codepointsForwardWithSupplementary() {
         val text = "A${grinningFace}B"
-        val result = text.codepoints(0, Direction.FORWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepoints().map { it.codepoint }.toList()
         assertEquals(listOf('A'.code, grinningFaceCodepoint, 'B'.code), result)
     }
 
@@ -181,35 +181,28 @@ class CharSequenceExtensionsTest {
     fun codepointsForwardWithLoneHighSurrogate() {
         // This was the bug: lone high surrogate followed by non-low-surrogate was being skipped
         val text = "${loneHighSurrogate}A"
-        val result = text.codepoints(0, Direction.FORWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepoints().map { it.codepoint }.toList()
         assertEquals(listOf(loneHighSurrogate.code, 'A'.code), result)
     }
 
     @Test
     fun codepointsForwardWithHighSurrogateAtEnd() {
         val text = "A${loneHighSurrogate}"
-        val result = text.codepoints(0, Direction.FORWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepoints().map { it.codepoint }.toList()
         assertEquals(listOf('A'.code, loneHighSurrogate.code), result)
-    }
-
-    @Test
-    fun codepointsForwardWithOffset() {
-        val text = "ABC"
-        val result = text.codepoints(1, Direction.FORWARD).asSequence().map { it.codepoint }.toList()
-        assertEquals(listOf('B'.code, 'C'.code), result)
     }
 
     @Test
     fun codepointsBackwardAscii() {
         val text = "ABC"
-        val result = text.codepoints(3, Direction.BACKWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepointsReversed().map { it.codepoint }.toList()
         assertEquals(listOf('C'.code, 'B'.code, 'A'.code), result)
     }
 
     @Test
     fun codepointsBackwardWithSupplementary() {
         val text = "A${grinningFace}B"
-        val result = text.codepoints(4, Direction.BACKWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepointsReversed().map { it.codepoint }.toList()
         assertEquals(listOf('B'.code, grinningFaceCodepoint, 'A'.code), result)
     }
 
@@ -217,64 +210,20 @@ class CharSequenceExtensionsTest {
     fun codepointsBackwardWithLoneLowSurrogate() {
         // This was the bug: lone low surrogate preceded by non-high-surrogate was being skipped
         val text = "A${loneLowSurrogate}"
-        val result = text.codepoints(2, Direction.BACKWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepointsReversed().map { it.codepoint }.toList()
         assertEquals(listOf(loneLowSurrogate.code, 'A'.code), result)
     }
 
     @Test
     fun codepointsBackwardWithLowSurrogateAtStart() {
         val text = "${loneLowSurrogate}A"
-        val result = text.codepoints(2, Direction.BACKWARD).asSequence().map { it.codepoint }.toList()
+        val result = text.codepointsReversed().map { it.codepoint }.toList()
         assertEquals(listOf('A'.code, loneLowSurrogate.code), result)
     }
 
     @Test
     fun codepointsEmpty() {
-        val result = "".codepoints(0, Direction.FORWARD).asSequence().toList()
+        val result = "".codepoints().toList()
         assertEquals(emptyList(), result)
-    }
-
-    @Test
-    fun forEachAndIteratorProduceSameResultsForward() {
-        val testStrings = listOf(
-            "Hello",
-            "A${grinningFace}B${thumbsUp}C",
-            "${loneHighSurrogate}A",
-            "A${loneLowSurrogate}",
-            "${grinningFace}${thumbsUp}",
-            ""
-        )
-
-        for (text in testStrings) {
-            val fromForEach = mutableListOf<Int>()
-            text.forEachCodepoint { fromForEach.add(it.codepoint) }
-
-            val fromIterator = text.codepoints(0, Direction.FORWARD)
-                .asSequence().map { it.codepoint }.toList()
-
-            assertEquals(fromForEach, fromIterator, "Mismatch for text: ${text.map { it.code }}")
-        }
-    }
-
-    @Test
-    fun forEachReversedAndIteratorProduceSameResultsBackward() {
-        val testStrings = listOf(
-            "Hello",
-            "A${grinningFace}B${thumbsUp}C",
-            "${loneHighSurrogate}A",
-            "A${loneLowSurrogate}",
-            "${grinningFace}${thumbsUp}",
-            ""
-        )
-
-        for (text in testStrings) {
-            val fromForEach = mutableListOf<Int>()
-            text.forEachCodepointReversed { fromForEach.add(it.codepoint) }
-
-            val fromIterator = text.codepoints(text.length, Direction.BACKWARD)
-                .asSequence().map { it.codepoint }.toList()
-
-            assertEquals(fromForEach, fromIterator, "Mismatch for text: ${text.map { it.code }}")
-        }
     }
 }

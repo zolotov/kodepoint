@@ -61,42 +61,5 @@ inline fun CharSequence.forEachCodepointReversed(f: (Codepoint) -> Unit) {
     }
 }
 
-fun CharSequence.codepoints(offset: Int, direction: Direction = Direction.FORWARD): Iterator<Codepoint> =
-  when (direction) {
-    Direction.FORWARD -> iterator {
-      var i = offset
-      val len = length
-      while (i < len) {
-        val c1 = get(i++)
-        if (c1.isHighSurrogate() && i < len) {
-          val c2 = get(i)
-          if (c2.isLowSurrogate()) {
-            i++
-            yield(Codepoint.fromChars(c1, c2))
-            continue
-          }
-        }
-        yield(Codepoint(c1.code))
-      }
-    }
-    Direction.BACKWARD -> iterator {
-      var i = offset - 1
-      while (i >= 0) {
-        val c2 = get(i--)
-        if (c2.isLowSurrogate() && i >= 0) {
-          val c1 = get(i)
-          if (c1.isHighSurrogate()) {
-            i--
-            yield(Codepoint.fromChars(c1, c2))
-            continue
-          }
-        }
-        yield(Codepoint(c2.code))
-      }
-    }
-  }
-
-enum class Direction {
-  FORWARD,
-  BACKWARD,
-}
+fun CharSequence.codepoints(): Sequence<Codepoint> = sequence { forEachCodepoint { yield(it) } }
+fun CharSequence.codepointsReversed(): Sequence<Codepoint> = sequence { forEachCodepointReversed { yield(it) } }
