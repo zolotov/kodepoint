@@ -38,7 +38,7 @@ java {
 
 mavenPublishing {
     configure(KotlinMultiplatform(
-        javadocJar = JavadocJar.Dokka("dokkaHtml"),
+        javadocJar = JavadocJar.Dokka("dokkaGenerate"),
         sourcesJar = true
     ))
     publishToMavenCentral(automaticRelease = true)
