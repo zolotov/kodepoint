@@ -1,5 +1,6 @@
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -17,6 +18,18 @@ kotlin {
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
     }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("nonJvm") {
+                withJs()
+                withWasmJs()
+                group("native")
+            }
+        }
+    }
+
     jvm {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -28,18 +41,31 @@ kotlin {
         binaries.library()
         browser()
     }
-
-    sourceSets {
-        val nonJvmMain by creating {
-            dependsOn(commonMain.get())
+    js {
+        browser()
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "60s"
+                }
+            }
         }
-        val nonJvmTest by creating {
-            dependsOn(commonTest.get())
-        }
-
-        wasmJsMain { dependsOn(nonJvmMain) }
-        wasmJsTest { dependsOn(nonJvmTest) }
     }
+
+    iosArm64()
+    iosSimulatorArm64()
+    iosX64()
+    tvosArm64()
+    tvosSimulatorArm64()
+    tvosX64()
+    watchosArm64()
+    watchosSimulatorArm64()
+    watchosX64()
+    macosArm64()
+    macosX64()
+    linuxX64()
+    linuxArm64()
+    mingwX64()
 }
 
 java {

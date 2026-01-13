@@ -66,5 +66,6 @@ benchmark {
             jmhVersion  = "1.37"
         }
         register("wasmJs")
+        register("macosArm64")
     }
 }
