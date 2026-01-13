@@ -2,7 +2,7 @@ import kotlinx.benchmark.gradle.JvmBenchmarkTarget
 
 plugins {
     id("kodepoint.multiplatform")
-    kotlin("plugin.allopen") version "2.3.0"
+    kotlin("plugin.allopen") version "2.2.20"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
 }
 
