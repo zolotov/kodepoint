@@ -14,7 +14,7 @@ run-name: "Publish ${{ inputs.version }}-SNAPSHOT"
 
 jobs:
   tests:
-    uses: ./.github/workflows/test.yaml
+    uses: ./.github/workflows/test.yml
 
   publish:
     needs: tests
