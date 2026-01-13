@@ -25,6 +25,31 @@ dependencies {
 }
 ```
 
+## Usage
+
+```kotlin
+import me.zolotov.kodepoint.*
+
+// Create a Codepoint
+val codepoint = Codepoint(0x1F600) // 😀
+
+val isLetter = codepoint.isLetter()
+val upperCase = codepoint.toUpperCase()
+
+// String conversion
+val string = codepoint.asString()
+
+// Work with CharSequence
+val text = "Hello 👋 World"
+text.forEachCodepoint { cp ->
+    println("U+${cp.codepoint.toString(16).uppercase()}: ${cp.asString()}")
+}
+
+// Append to StringBuilder
+val sb = StringBuilder()
+sb.appendCodePoint(Codepoint(0x1F44D)) // 👍
+```
+
 ## Architecture
 
 ### `lib` - Main Library Module
@@ -133,28 +158,3 @@ JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this charac
 - `isWhitespace`, `isJavaIdentifierStart`, `isJavaIdentifierPart`
 
 Results are written to `benchmarks/build/reports/benchmarks/`.
-
-## Usage
-
-```kotlin
-import me.zolotov.kodepoint.*
-
-// Create a Codepoint
-val codepoint = Codepoint(0x1F600) // 😀
-
-val isLetter = codepoint.isLetter()
-val upperCase = codepoint.toUpperCase()
-
-// String conversion
-val string = codepoint.asString()
-
-// Work with CharSequence
-val text = "Hello 👋 World"
-for (cp in text.codepoints()) {
-    println("U+${cp.codepoint.toString(16).uppercase()}: ${cp.asString()}")
-}
-
-// Append to StringBuilder
-val sb = StringBuilder()
-sb.appendCodePoint(Codepoint(0x1F44D)) // 👍
-```µ
