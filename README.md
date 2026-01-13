@@ -52,6 +52,8 @@ sb.appendCodePoint(Codepoint(0x1F44D)) // 👍
 
 ## Architecture
 
+For detailed technical documentation on data storage, lookup tables, and platform-specific implementations, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ### `lib` - Main Library Module
 
 Core library providing Unicode character functionality through `@JvmInline value class Codepoint`.
