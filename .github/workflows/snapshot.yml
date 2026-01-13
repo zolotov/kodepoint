@@ -15,7 +15,11 @@ on:
 run-name: "Publish ${{ inputs.version }}-SNAPSHOT"
 
 jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+
   publish:
+    needs: tests
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
