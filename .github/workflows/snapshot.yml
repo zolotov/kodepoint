@@ -37,7 +37,6 @@ jobs:
       - name: Publish
         env:
           GITHUB_TOKEN: ${{ inputs.github-token }}
-          RELEASE_SIGNING_ENABLED: true
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
