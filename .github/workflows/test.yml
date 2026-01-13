@@ -15,7 +15,19 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            tasks: jvmTest jsTest wasmJsTest linuxX64Test
+          - os: macos-latest
+            tasks: jvmTest iosSimulatorArm64Test macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test
+          - os: windows-latest
+            tasks: jvmTest mingwX64Test
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout sources
@@ -30,13 +42,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build with Gradle
-        run: ./gradlew allTests
+      - name: Run tests
+        run: ./gradlew ${{ matrix.tasks }}
 
       - name: Publish Test Report
-        if: always() # Ensure this step runs even if the test step fails
+        if: always()
         uses: dorny/test-reporter@v2
         with:
-          name: Tests Report
+          name: Tests Report (${{ matrix.os }})
           path: "**/build/test-results/**/*.xml"
           reporter: java-junit
