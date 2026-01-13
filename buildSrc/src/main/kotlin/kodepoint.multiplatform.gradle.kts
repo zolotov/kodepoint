@@ -42,10 +42,7 @@ mavenPublishing {
         sourcesJar = true
     ))
     publishToMavenCentral(automaticRelease = true)
-    // Only sign if signing key is available
-    if (project.findProperty("signingInMemoryKey") != null || System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null) {
-        signAllPublications()
-    }
+    signAllPublications()
     pom {
         name.set(project.name)
         description.set(project.description)

@@ -13,7 +13,11 @@ on:
 run-name: "Publish ${{ inputs.version }}-SNAPSHOT"
 
 jobs:
+  tests:
+    uses: ./.github/workflows/test.yaml
+
   publish:
+    needs: tests
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -31,6 +35,7 @@ jobs:
       - name: Publish
         env:
           GITHUB_TOKEN: ${{ inputs.github-token }}
+          RELEASE_SIGNING_ENABLED: true
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
