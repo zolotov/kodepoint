@@ -73,10 +73,16 @@ class CharSequenceExtensionsTest {
     }
 
     @Test
+    fun codePointBeforeLength() {
+        val text = "Hello"
+        assertEquals('o'.code, text.codePointBefore(text.length).codepoint)
+    }
+
+    @Test
     fun codePointBeforeOutOfBounds() {
         val text = "Hello"
         assertFailsWith<IndexOutOfBoundsException> { text.codePointBefore(0) }
-        assertFailsWith<IndexOutOfBoundsException> { text.codePointBefore(5) }
+        assertFailsWith<IndexOutOfBoundsException> { text.codePointBefore(6) }
     }
 
     @Test

@@ -15,7 +15,7 @@ fun CharSequence.codePointAt(index: Int): Codepoint {
 
 fun CharSequence.codePointBefore(index: Int): Codepoint {
   val startIndex = index - 1
-  if (startIndex < 0 || index !in indices) throw IndexOutOfBoundsException("Index out of range: $index, size: $length")
+  if (startIndex !in indices) throw IndexOutOfBoundsException("Index out of range: $startIndex, size: $length")
 
   val secondChar = this[startIndex]
   if (secondChar.isLowSurrogate() && startIndex - 1 >= 0) {
