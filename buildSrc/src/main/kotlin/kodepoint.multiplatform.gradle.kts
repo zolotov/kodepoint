@@ -25,6 +25,7 @@ kotlin {
             group("nonJvm") {
                 withJs()
                 withWasmJs()
+                withWasmWasi()
                 group("native")
             }
         }
@@ -40,6 +41,11 @@ kotlin {
     wasmJs {
         binaries.library()
         browser()
+    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmWasi {
+        binaries.library()
+        nodejs()
     }
     js {
         browser()
