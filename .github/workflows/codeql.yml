@@ -58,9 +58,6 @@ jobs:
       if: matrix.language == 'java-kotlin'
       shell: bash
       run: |
-        echo "JAVA_HOME: $JAVA_HOME"
-        java -version
-        ./gradlew -q javaToolchains -Dorg.gradle.java.installations.fromEnv=JAVA_HOME
         ./gradlew clean build --no-daemon --stacktrace -Dorg.gradle.java.installations.fromEnv=JAVA_HOME
 
     - name: Perform CodeQL Analysis
