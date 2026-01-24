@@ -60,8 +60,8 @@ jobs:
       run: |
         echo "JAVA_HOME: $JAVA_HOME"
         java -version
-        ./gradlew -q javaToolchains
-        ./gradlew clean build --no-daemon --stacktrace --info
+        ./gradlew -q javaToolchains -Dorg.gradle.java.installations.fromEnv=JAVA_HOME
+        ./gradlew clean build --no-daemon --stacktrace -Dorg.gradle.java.installations.fromEnv=JAVA_HOME
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
