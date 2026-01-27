@@ -1,7 +1,10 @@
 import kotlinx.benchmark.gradle.JvmBenchmarkTarget
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    id("kodepoint.multiplatform")
+    // Don't use kodepoint.multiplatform here because kotlinx-benchmark-runtime
+    // doesn't support wasmWasi target, which would cause dependency resolution failure
+    kotlin("multiplatform")
     kotlin("plugin.allopen") version "2.2.20"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
 }
@@ -17,12 +20,25 @@ allOpen {
 kotlin {
     jvmToolchain(24)
     applyDefaultHierarchyTemplate()
+    
+    // Only define targets that kotlinx-benchmark supports
+    // (wasmWasi is NOT supported by kotlinx-benchmark-runtime)
+    jvm()
+    
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        nodejs()
+        binaries.executable()
+    }
+    
+    js {
+        browser()
+        nodejs()
+    }
+    
+    macosArm64()
+    
     sourceSets {
-        @Suppress("OPT_IN_USAGE")
-        wasmJs {
-            nodejs()
-            binaries.executable()
-        }
         commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.15")
