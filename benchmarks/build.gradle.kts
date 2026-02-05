@@ -36,7 +36,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.15")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.16")
                 implementation(project(":unicode"))
                 implementation(project(":common"))
             }
