@@ -47,7 +47,7 @@ jobs:
 
       - name: Publish Test Report
         if: always()
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         with:
           name: Tests Report (${{ matrix.os }})
           path: "**/build/test-results/**/*.xml"
