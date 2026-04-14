@@ -5,7 +5,8 @@ import kotlin.io.path.forEachLine
 
 class UnicodeData(
     val characters: Array<CharacterData>,
-    val scripts: Map<Int, String>
+    val scripts: Map<Int, String>,
+    val eastAsianWidths: Map<Int, String>
 )
 
 /**
@@ -17,7 +18,8 @@ fun parsedUnicodeData(
     caseFoldingsFile: Path,
     specialCasingFile: Path,
     scriptsFile: Path,
-    propListFile: Path
+    propListFile: Path,
+    eastAsianWidthFile: Path
 ): UnicodeData {
     val characters = Array(MAX_CODEPOINT + 1) { CharacterData(it) }
     parseUnicodeData(unicodeDataFile, characters)
@@ -26,11 +28,34 @@ fun parsedUnicodeData(
     parsePropList(propListFile, characters)
     parseSpecialCasing(specialCasingFile, characters)
     val scripts = parseScriptsFile(scriptsFile)
+    val eastAsianWidths = parseEastAsianWidthFile(eastAsianWidthFile)
 
     // Compute derived boolean properties from category and JVM Character class
     computeDerivedProperties(characters)
 
-    return UnicodeData(characters = characters, scripts = scripts)
+    return UnicodeData(characters = characters, scripts = scripts, eastAsianWidths = eastAsianWidths)
+}
+
+/**
+ * Parse EastAsianWidth.txt and return a map of codepoint -> width abbreviation.
+ * Abbreviations: N (Neutral), Na (Narrow), W (Wide), F (Fullwidth), H (Halfwidth), A (Ambiguous).
+ */
+fun parseEastAsianWidthFile(eastAsianWidthFile: Path): Map<Int, String> {
+    return buildMap {
+        eastAsianWidthFile.forEachLine { line ->
+            if (!line.isBlank() && !line.startsWith("#")) {
+                val data = line.substringBefore('#')
+                val parts = data.split(';', limit = 2).map { it.trim() }
+                if (parts.size == 2) {
+                    val range = parseRange(parts[0].trim())
+                    val width = parts[1].trim()
+                    for (cp in range) {
+                        put(cp, width)
+                    }
+                }
+            }
+        }
+    }
 }
 
 private fun computeDerivedProperties(characters: Array<CharacterData>) {

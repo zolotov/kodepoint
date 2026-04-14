@@ -1,5 +1,6 @@
 package me.zolotov.kodepoint
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import kotlin.jvm.JvmInline
 
 /**
@@ -71,6 +72,14 @@ value class Codepoint(val codepoint: Int) {
      * Returns the Unicode script for this codepoint.
      */
     fun getUnicodeScript(): UnicodeScript = getUnicodeScript(codepoint)
+
+    /**
+     * Returns the East Asian Width property of this codepoint (UAX #11).
+     *
+     * Useful for terminal/monospace rendering where [EastAsianWidth.WIDE] and
+     * [EastAsianWidth.FULLWIDTH] characters occupy two columns.
+     */
+    fun getEastAsianWidth(): EastAsianWidth = getEastAsianWidth(codepoint)
 
     /**
      * Returns true if this codepoint should be ignored in identifiers.

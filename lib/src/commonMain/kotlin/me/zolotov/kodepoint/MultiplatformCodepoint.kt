@@ -1,5 +1,6 @@
 package me.zolotov.kodepoint
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import me.zolotov.kodepoint.script.UnicodeScript
 
 internal const val MIN_SUPPLEMENTARY_CODE_POINT = 0x10000
@@ -25,3 +26,4 @@ internal expect fun isJavaIdentifierStart(codepoint: Int): Boolean
 internal expect fun isJavaIdentifierPart(codepoint: Int): Boolean
 internal expect fun isISOControl(codepoint: Int): Boolean
 internal expect fun getUnicodeScript(codepoint: Int): UnicodeScript
+internal expect fun getEastAsianWidth(codepoint: Int): EastAsianWidth

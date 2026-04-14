@@ -1,6 +1,7 @@
 package me.zolotov.kodepoint.generator
 
 import me.zolotov.kodepoint.generator.code.generateCharacterDataClasses
+import me.zolotov.kodepoint.generator.code.generateEastAsianWidthDataClasses
 import me.zolotov.kodepoint.generator.code.generateScriptDataClasses
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
@@ -28,7 +29,8 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
         "DerivedCoreProperties.txt",
         "Scripts.txt",
         "CaseFolding.txt",
-        "SpecialCasing.txt"
+        "SpecialCasing.txt",
+        "EastAsianWidth.txt"
     )
     val dataDir = cacheDir.resolve("unicode-data-$UNICODE_VERSION")
     UnicodeDataDownloader.ensureUnicodeFilesDownloaded(dataDir, dataFiles)
@@ -40,9 +42,11 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
         caseFoldingsFile = dataDir.resolve("CaseFolding.txt"),
         specialCasingFile = dataDir.resolve("SpecialCasing.txt"),
         scriptsFile = dataDir.resolve("Scripts.txt"),
-        propListFile = dataDir.resolve("PropList.txt")
+        propListFile = dataDir.resolve("PropList.txt"),
+        eastAsianWidthFile = dataDir.resolve("EastAsianWidth.txt")
     )
     println("Parsed ${unicodeData.scripts.size} script mappings")
+    println("Parsed ${unicodeData.eastAsianWidths.size} East Asian Width mappings")
 
     println("Packing character properties...")
     val characterProperties = unicodeData.characters.map { cp -> PropertyPacker.pack(cp) }.toIntArray()
@@ -75,7 +79,23 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
     println("Total script table size: $totalScriptSize bytes")
     println("Script count: ${scriptBuildResult.scriptNames.size}")
 
-    val totalSize = totalPropertySize + totalScriptSize
+    println("Building East Asian Width tables by plane...")
+    val eawBuildResult = buildEastAsianWidthTables(unicodeData.eastAsianWidths)
+    var totalEawSize = eawBuildResult.latin1WidthIds.size  // 256 bytes for Latin1
+    for (planeResult in eawBuildResult.planeResults) {
+        when (planeResult) {
+            is EastAsianWidthPlaneResult.Sparse -> {
+                println("  ${planeResult.plane.name}: sparse (${planeResult.ranges.size} ranges), size=${planeResult.size} bytes")
+            }
+            is EastAsianWidthPlaneResult.Table -> {
+                println("  ${planeResult.plane.name}: indexBits=${planeResult.table.indexBits}, blockBits=${planeResult.table.blockBits}, size=${planeResult.size} bytes")
+            }
+        }
+        totalEawSize += planeResult.size
+    }
+    println("Total East Asian Width table size: $totalEawSize bytes")
+
+    val totalSize = totalPropertySize + totalScriptSize + totalEawSize
     println("Total generated data size: $totalSize bytes")
 
     outputDir.deleteRecursively()
@@ -83,6 +103,7 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
 
     generateCharacterDataClasses(generatedDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
     generateScriptDataClasses(generatedDir, scriptBuildResult, additionalComment)
+    generateEastAsianWidthDataClasses(generatedDir, eawBuildResult, additionalComment)
 
     println("Generation complete!")
 }

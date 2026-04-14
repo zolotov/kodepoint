@@ -1,5 +1,6 @@
 package me.zolotov.kodepoint
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import me.zolotov.kodepoint.script.UnicodeScript
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -330,6 +331,47 @@ class CodepointTest {
         val cp = Codepoint(0xABCD)
         assertTrue(cp.toString().contains("ABCD"))
         assertFalse(cp.toString().contains("abcd"))
+    }
+
+    @Test
+    fun testGetEastAsianWidth() {
+        // Narrow: ASCII letters and digits
+        assertEquals(EastAsianWidth.NARROW, Codepoint('A'.code).getEastAsianWidth())
+        assertEquals(EastAsianWidth.NARROW, Codepoint('z'.code).getEastAsianWidth())
+        assertEquals(EastAsianWidth.NARROW, Codepoint('0'.code).getEastAsianWidth())
+
+        // Wide: CJK unified ideographs
+        assertEquals(EastAsianWidth.WIDE, Codepoint('中'.code).getEastAsianWidth())  // U+4E2D
+        assertEquals(EastAsianWidth.WIDE, Codepoint('漢'.code).getEastAsianWidth())  // U+6F22
+        assertEquals(EastAsianWidth.WIDE, Codepoint('あ'.code).getEastAsianWidth())  // U+3042 Hiragana
+        assertEquals(EastAsianWidth.WIDE, Codepoint('ア'.code).getEastAsianWidth())  // U+30A2 Katakana
+        assertEquals(EastAsianWidth.WIDE, Codepoint('한'.code).getEastAsianWidth())  // U+D55C Hangul
+
+        // Neutral: Latin-1 control characters and currency symbols without East Asian width
+        assertEquals(EastAsianWidth.NEUTRAL, Codepoint(0x0000).getEastAsianWidth())  // NUL
+
+        // Ambiguous: Greek and Cyrillic letters (context-dependent)
+        assertEquals(EastAsianWidth.AMBIGUOUS, Codepoint('α'.code).getEastAsianWidth())  // U+03B1 Greek
+        assertEquals(EastAsianWidth.AMBIGUOUS, Codepoint('А'.code).getEastAsianWidth())  // U+0410 Cyrillic
+
+        // Fullwidth: Fullwidth Latin capital letters (U+FF01..U+FF60)
+        assertEquals(EastAsianWidth.FULLWIDTH, Codepoint(0xFF21).getEastAsianWidth())  // FULLWIDTH LATIN CAPITAL A
+        assertEquals(EastAsianWidth.FULLWIDTH, Codepoint(0xFF01).getEastAsianWidth())  // FULLWIDTH EXCLAMATION MARK
+
+        // Halfwidth: Halfwidth Katakana (U+FF65..U+FF9F)
+        assertEquals(EastAsianWidth.HALFWIDTH, Codepoint(0xFF65).getEastAsianWidth())  // HALFWIDTH KATAKANA MIDDLE DOT
+        assertEquals(EastAsianWidth.HALFWIDTH, Codepoint(0xFF71).getEastAsianWidth())  // HALFWIDTH KATAKANA LETTER A
+
+        // columns property
+        assertEquals(1, Codepoint('A'.code).getEastAsianWidth().columns)
+        assertEquals(2, Codepoint('中'.code).getEastAsianWidth().columns)
+        assertEquals(2, Codepoint(0xFF21).getEastAsianWidth().columns)  // FULLWIDTH
+        assertEquals(1, Codepoint(0xFF65).getEastAsianWidth().columns)  // HALFWIDTH
+
+        // Supplementary plane: CJK Extension B (U+20000) — Wide
+        assertEquals(EastAsianWidth.WIDE, Codepoint(0x20000).getEastAsianWidth())
+        // Supplementary plane: emoji (U+1F600 😀) — Wide
+        assertEquals(EastAsianWidth.WIDE, Codepoint(0x1F600).getEastAsianWidth())
     }
 
     @Test

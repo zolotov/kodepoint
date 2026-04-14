@@ -1,6 +1,8 @@
 package me.zolotov.kodepoint.unicode
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import me.zolotov.kodepoint.generated.CharacterData
+import me.zolotov.kodepoint.generated.EastAsianWidthData
 import me.zolotov.kodepoint.generated.ScriptData
 import me.zolotov.kodepoint.internal.asciiToLowerCase
 import me.zolotov.kodepoint.internal.asciiToUpperCase
@@ -168,4 +170,6 @@ object Codepoints {
         codepoint in 0x00..0x1F || codepoint in 0x7F..0x9F
 
     fun getUnicodeScript(codepoint: Int): UnicodeScript = ScriptData.getScript(codepoint)
+
+    fun getEastAsianWidth(codepoint: Int): EastAsianWidth = EastAsianWidthData.getEastAsianWidth(codepoint)
 }

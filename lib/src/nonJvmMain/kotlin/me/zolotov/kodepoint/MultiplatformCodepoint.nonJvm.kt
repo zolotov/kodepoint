@@ -1,5 +1,6 @@
 package me.zolotov.kodepoint
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import me.zolotov.kodepoint.script.UnicodeScript
 import me.zolotov.kodepoint.unicode.Codepoints
 
@@ -38,3 +39,4 @@ internal actual fun isJavaIdentifierStart(codepoint: Int): Boolean = Codepoints.
 internal actual fun isJavaIdentifierPart(codepoint: Int): Boolean = Codepoints.isJavaIdentifierPart(codepoint)
 internal actual fun isISOControl(codepoint: Int): Boolean = Codepoints.isISOControl(codepoint)
 internal actual fun getUnicodeScript(codepoint: Int): UnicodeScript = Codepoints.getUnicodeScript(codepoint)
+internal actual fun getEastAsianWidth(codepoint: Int): EastAsianWidth = Codepoints.getEastAsianWidth(codepoint)

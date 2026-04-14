@@ -1,6 +1,8 @@
 package me.zolotov.kodepoint
 
+import me.zolotov.kodepoint.eaw.EastAsianWidth
 import me.zolotov.kodepoint.script.UnicodeScript
+import me.zolotov.kodepoint.unicode.Codepoints
 
 
 internal actual fun codepointsToString(vararg codepoints: Int): String = java.lang.String(codepoints, 0, codepoints.size).toString()
@@ -32,6 +34,9 @@ internal actual fun isISOControl(codepoint: Int): Boolean = Character.isISOContr
 internal actual fun getUnicodeScript(codepoint: Int): UnicodeScript {
     return jvmScriptToUnicodeScript(Character.UnicodeScript.of(codepoint))
 }
+
+// JVM has no native EAW API, so delegate to the generated lookup tables.
+internal actual fun getEastAsianWidth(codepoint: Int): EastAsianWidth = Codepoints.getEastAsianWidth(codepoint)
 
 private fun jvmScriptToUnicodeScript(jvmScript: Character.UnicodeScript): UnicodeScript = when (jvmScript) {
     Character.UnicodeScript.UNKNOWN -> UnicodeScript.UNKNOWN
