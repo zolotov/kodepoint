@@ -1,0 +1,169 @@
+name: "Benchmarks"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: benchmarks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: JVM Benchmarks
+
+    # Bencher secrets are intentionally not exposed to fork pull requests.
+    if: >
+      github.event_name == 'push' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       !github.event.pull_request.draft)
+
+    runs-on: ubuntu-latest
+
+    env:
+      BENCHER_PROJECT: ${{ vars.BENCHER_PROJECT }}
+      BENCHER_USER_EMAIL: ${{ vars.BENCHER_USER_EMAIL }}
+      BENCHER_TESTBED: intel-v1-corretto24-jmh-nonfork
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Validate Bencher configuration
+        env:
+          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
+        run: |
+          if [ -z "$BENCHER_PROJECT" ]; then
+            echo "::error::Missing repository variable BENCHER_PROJECT."
+            exit 1
+          fi
+
+          if [ -z "$BENCHER_USER_EMAIL" ]; then
+            echo "::error::Missing repository variable BENCHER_USER_EMAIL."
+            exit 1
+          fi
+
+          if [ -z "$BENCHER_API_KEY" ]; then
+            echo "::error::Missing repository secret BENCHER_API_KEY."
+            exit 1
+          fi
+
+          case "$BENCHER_API_KEY" in
+            bencher_user_*) ;;
+            *)
+              echo "::error::BENCHER_API_KEY must be a user-scoped Bencher API key (bencher_user_*)."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Java
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5
+        with:
+          distribution: "corretto"
+          java-version: 24
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
+
+      - name: Build runnable JMH jar
+        run: ./gradlew :benchmarks:jvmBenchmarkJar
+
+      - name: Compute image tag
+        id: image
+        run: |
+          echo "tag=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "reference=registry.bencher.dev/${BENCHER_PROJECT}:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image=${BENCHER_PROJECT}:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to Bencher registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: registry.bencher.dev
+          username: ${{ vars.BENCHER_USER_EMAIL }}
+          password: ${{ secrets.BENCHER_API_KEY }}
+
+      - name: Build and push benchmark image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: ./benchmarks
+          file: ./benchmarks/docker/benchmarks.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.reference }}
+
+      - name: Install Bencher CLI
+        uses: bencherdev/bencher@7d9903445cb8a2320c2318c3c79463fcab1da36c # main
+        with:
+          version: 0.6.8
+
+      - name: Track main bare-metal benchmark history in Bencher
+        if: github.event_name == 'push'
+        env:
+          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bencher run \
+            --project "$BENCHER_PROJECT" \
+            --key "$BENCHER_API_KEY" \
+            --branch "$GITHUB_REF_NAME" \
+            --hash "$GITHUB_SHA" \
+            --image "${{ steps.image.outputs.image }}" \
+            --testbed "$BENCHER_TESTBED" \
+            --spec intel-v1 \
+            --job-timeout 300 \
+            --threshold-measure throughput \
+            --threshold-test t_test \
+            --threshold-max-sample-size 64 \
+            --threshold-lower-boundary 0.99 \
+            --thresholds-reset \
+            --error-on-alert \
+            --adapter java_jmh \
+            --file /tmp/kodepoint-jmh-results.json \
+            --github-actions "$GITHUB_TOKEN" \
+            --ci-id jvm \
+            --ci-public-links
+
+      - name: Track pull request bare-metal benchmarks in Bencher
+        if: github.event_name == 'pull_request'
+        env:
+          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          bencher run \
+            --project "$BENCHER_PROJECT" \
+            --key "$BENCHER_API_KEY" \
+            --branch "$GITHUB_HEAD_REF" \
+            --hash "$PR_HEAD_SHA" \
+            --start-point "$GITHUB_BASE_REF" \
+            --start-point-hash "$PR_BASE_SHA" \
+            --start-point-clone-thresholds \
+            --start-point-reset \
+            --image "${{ steps.image.outputs.image }}" \
+            --testbed "$BENCHER_TESTBED" \
+            --spec intel-v1 \
+            --job-timeout 300 \
+            --error-on-alert \
+            --adapter java_jmh \
+            --file /tmp/kodepoint-jmh-results.json \
+            --github-actions "$GITHUB_TOKEN" \
+            --ci-id jvm \
+            --ci-only-thresholds \
+            --ci-public-links
