@@ -1,5 +1,6 @@
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
+import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -81,7 +82,7 @@ java {
 mavenPublishing {
     configure(KotlinMultiplatform(
         javadocJar = JavadocJar.Dokka("dokkaGenerate"),
-        sourcesJar = true
+        sourcesJar = SourcesJar.Sources()
     ))
     publishToMavenCentral(automaticRelease = true)
     signAllPublications()
