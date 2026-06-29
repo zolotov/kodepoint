@@ -80,3 +80,9 @@ benchmark {
         register("macosArm64")
     }
 }
+
+tasks.register("wasmJsBenchmarkPackage") {
+    group = "benchmark"
+    description = "Build the packaged Node/Wasm benchmark executable for 'wasmJs'"
+    dependsOn("wasmJsWasmJsBenchmarkWasmJsBenchmarkProductionExecutableCompileSync")
+}
