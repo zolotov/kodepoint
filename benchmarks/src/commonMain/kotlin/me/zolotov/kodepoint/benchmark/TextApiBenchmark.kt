@@ -55,6 +55,16 @@ class TextApiBenchmark {
     }
 
     @Benchmark
+    fun appendCodePointInt(blackhole: Blackhole) {
+        val sb = StringBuilder()
+        repeat(64) {
+            sb.appendCodePoint('A'.code)
+            sb.appendCodePoint(0x1F600)
+        }
+        blackhole.consume(sb.length)
+    }
+
+    @Benchmark
     fun codepointsForward(blackhole: Blackhole) {
         repeat(32) {
             val iterator = mixedText.codepoints(0, Direction.FORWARD)
