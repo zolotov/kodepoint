@@ -48,8 +48,8 @@ class TextApiBenchmark {
     fun appendCodePoint(blackhole: Blackhole) {
         val sb = StringBuilder()
         repeat(64) {
-            sb.appendCodePoint(Codepoint('A'.code))
-            sb.appendCodePoint(Codepoint(0x1F600))
+            sb.appendCodePoint(asciiCodepoint)
+            sb.appendCodePoint(supplementaryCodepoint)
         }
         blackhole.consume(sb.length)
     }
