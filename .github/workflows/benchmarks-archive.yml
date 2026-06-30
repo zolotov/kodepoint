@@ -36,7 +36,7 @@ jobs:
           fi
 
       - name: Install Bencher CLI
-        uses: bencherdev/bencher@7d9903445cb8a2320c2318c3c79463fcab1da36c # main
+        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
         with:
           version: 0.6.8
 
