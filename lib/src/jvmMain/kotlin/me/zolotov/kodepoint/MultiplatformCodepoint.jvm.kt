@@ -2,9 +2,6 @@ package me.zolotov.kodepoint
 
 import me.zolotov.kodepoint.script.UnicodeScript
 
-
-internal actual fun codepointsToString(vararg codepoints: Int): String = java.lang.String(codepoints, 0, codepoints.size).toString()
-
 internal actual fun codepointOf(highSurrogate: Char, lowSurrogate: Char): Codepoint =
     Codepoint(Character.toCodePoint(highSurrogate, lowSurrogate))
 
