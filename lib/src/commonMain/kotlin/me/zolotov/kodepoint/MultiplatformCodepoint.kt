@@ -4,7 +4,6 @@ import me.zolotov.kodepoint.script.UnicodeScript
 
 internal const val MIN_SUPPLEMENTARY_CODE_POINT = 0x10000
 
-internal expect fun codepointsToString(vararg codepoints: Int): String
 internal expect fun codepointOf(highSurrogate: Char, lowSurrogate: Char): Codepoint
 internal expect fun highSurrogate(codepoint: Int): Char
 internal expect fun lowSurrogate(codepoint: Int): Char

@@ -9,12 +9,6 @@ private const val SURROGATE_DECODE_OFFSET =
     MIN_SUPPLEMENTARY_CODE_POINT - (MIN_HIGH_SURROGATE shl 10) - MIN_LOW_SURROGATE
 private const val HIGH_SURROGATE_ENCODE_OFFSET = (MIN_HIGH_SURROGATE - (MIN_SUPPLEMENTARY_CODE_POINT ushr 10))
 
-internal actual fun codepointsToString(vararg codepoints: Int): String = buildString(capacity = codepoints.size * 2) {
-    for (codePoint in codepoints) {
-        appendCodePoint(Codepoint(codePoint))
-    }
-}
-
 internal actual fun codepointOf(highSurrogate: Char, lowSurrogate: Char): Codepoint =
     Codepoint((highSurrogate.code shl 10) + lowSurrogate.code + SURROGATE_DECODE_OFFSET)
 
