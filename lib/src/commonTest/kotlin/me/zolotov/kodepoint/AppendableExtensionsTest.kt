@@ -95,4 +95,14 @@ class AppendableExtensionsTest {
 
         assertEquals(originalCodepoints, readBack)
     }
+
+    @Test
+    fun appendCodePointIntOverload() {
+        val result = StringBuilder()
+            .appendCodePoint('A'.code)
+            .appendCodePoint(0x1F600)
+            .toString()
+
+        assertEquals("A\uD83D\uDE00", result)
+    }
 }

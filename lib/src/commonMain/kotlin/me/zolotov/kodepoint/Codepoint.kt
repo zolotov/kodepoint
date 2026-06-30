@@ -13,8 +13,6 @@ value class Codepoint(val codepoint: Int) {
     val charCount: Int
         get() = if (codepoint < MIN_SUPPLEMENTARY_CODE_POINT) 1 else 2
 
-    internal fun isBmpCodePoint(): Boolean = codepoint ushr 16 == 0
-
     /**
      * Returns true if this codepoint is a Unicode letter (categories Lu, Ll, Lt, Lm, Lo).
      */
