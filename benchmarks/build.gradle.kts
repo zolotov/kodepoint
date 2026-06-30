@@ -37,6 +37,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.17")
+                implementation(project(":kodepoint"))
                 implementation(project(":unicode"))
                 implementation(project(":common"))
             }
