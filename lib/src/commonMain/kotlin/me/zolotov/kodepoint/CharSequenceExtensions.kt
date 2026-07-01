@@ -63,40 +63,55 @@ inline fun CharSequence.forEachCodepointReversed(f: (Codepoint) -> Unit) {
 
 fun CharSequence.codepoints(offset: Int, direction: Direction = Direction.FORWARD): Iterator<Codepoint> =
   when (direction) {
-    Direction.FORWARD -> iterator {
-      var i = offset
-      val len = length
-      while (i < len) {
-        val c1 = get(i++)
-        if (c1.isHighSurrogate() && i < len) {
-          val c2 = get(i)
-          if (c2.isLowSurrogate()) {
-            i++
-            yield(Codepoint.fromChars(c1, c2))
-            continue
-          }
-        }
-        yield(Codepoint(c1.code))
-      }
-    }
-    Direction.BACKWARD -> iterator {
-      var i = offset - 1
-      while (i >= 0) {
-        val c2 = get(i--)
-        if (c2.isLowSurrogate() && i >= 0) {
-          val c1 = get(i)
-          if (c1.isHighSurrogate()) {
-            i--
-            yield(Codepoint.fromChars(c1, c2))
-            continue
-          }
-        }
-        yield(Codepoint(c2.code))
-      }
-    }
+    Direction.FORWARD -> ForwardCodepointIterator(this, offset)
+    Direction.BACKWARD -> BackwardCodepointIterator(this, offset)
   }
 
 enum class Direction {
   FORWARD,
   BACKWARD,
+}
+
+private class ForwardCodepointIterator(
+    private val source: CharSequence,
+    private var index: Int,
+) : Iterator<Codepoint> {
+    override fun hasNext(): Boolean = index < source.length
+
+    override fun next(): Codepoint {
+        if (!hasNext()) throw NoSuchElementException()
+
+        val firstChar = source[index++]
+        if (firstChar.isHighSurrogate() && index < source.length) {
+            val secondChar = source[index]
+            if (secondChar.isLowSurrogate()) {
+                index++
+                return Codepoint.fromChars(firstChar, secondChar)
+            }
+        }
+        return Codepoint(firstChar.code)
+    }
+}
+
+private class BackwardCodepointIterator(
+    private val source: CharSequence,
+    offset: Int,
+) : Iterator<Codepoint> {
+    private var index = offset - 1
+
+    override fun hasNext(): Boolean = index >= 0
+
+    override fun next(): Codepoint {
+        if (!hasNext()) throw NoSuchElementException()
+
+        val secondChar = source[index--]
+        if (secondChar.isLowSurrogate() && index >= 0) {
+            val firstChar = source[index]
+            if (firstChar.isHighSurrogate()) {
+                index--
+                return Codepoint.fromChars(firstChar, secondChar)
+            }
+        }
+        return Codepoint(secondChar.code)
+    }
 }
