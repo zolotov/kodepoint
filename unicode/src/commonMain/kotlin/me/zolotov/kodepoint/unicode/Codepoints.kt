@@ -12,6 +12,10 @@ import me.zolotov.kodepoint.script.UnicodeScript
  * Unicode character property functions.
  */
 object Codepoints {
+    private const val ASCII_DELETE = 0x7F
+    private const val ASCII_DOLLAR = 0x24
+    private const val ASCII_SPACE = 0x20
+    private const val ASCII_UNDERSCORE = 0x5F
 
     // Pre-computed masks for efficient multi-category checks
     private const val LETTER_MASK = (1 shl CharacterData.CAT_LU) or (1 shl CharacterData.CAT_LL) or
@@ -40,38 +44,64 @@ object Codepoints {
     private fun hasLargeUppercaseDelta(props: Int): Boolean =
         (props and CharacterData.HAS_LARGE_UPPERCASE_DELTA_BIT) != 0
 
-    fun isLetter(codepoint: Int): Boolean {
+    private fun isAsciiUppercaseLetter(codepoint: Int): Boolean =
+        (codepoint - 'A'.code).toUInt() <= 25u
+
+    private fun isAsciiLowercaseLetter(codepoint: Int): Boolean =
+        (codepoint - 'a'.code).toUInt() <= 25u
+
+    private fun isAsciiLetter(codepoint: Int): Boolean =
+        isAsciiUppercaseLetter(codepoint) || isAsciiLowercaseLetter(codepoint)
+
+    private fun isAsciiDigit(codepoint: Int): Boolean =
+        (codepoint - '0'.code).toUInt() <= 9u
+
+    private fun isAsciiWhitespace(codepoint: Int): Boolean =
+        codepoint == ASCII_SPACE || (codepoint - 0x09).toUInt() <= 4u
+
+    private fun isAsciiIdentifierIgnorable(codepoint: Int): Boolean =
+        codepoint in 0x00..0x08 || codepoint in 0x0E..0x1B || codepoint == ASCII_DELETE
+
+    private fun isAsciiUnicodeIdentifierPart(codepoint: Int): Boolean =
+        isAsciiLetter(codepoint) || isAsciiDigit(codepoint) || codepoint == ASCII_UNDERSCORE
+
+    private fun isAsciiJavaIdentifierStart(codepoint: Int): Boolean =
+        isAsciiLetter(codepoint) || codepoint == ASCII_DOLLAR || codepoint == ASCII_UNDERSCORE
+
+    private fun isAsciiJavaIdentifierPart(codepoint: Int): Boolean =
+        isAsciiUnicodeIdentifierPart(codepoint) || codepoint == ASCII_DOLLAR || isAsciiIdentifierIgnorable(codepoint)
+
+    private fun getAsciiUnicodeScript(codepoint: Int): UnicodeScript =
+        if (isAsciiLetter(codepoint)) UnicodeScript.LATIN else UnicodeScript.COMMON
+
+    private fun isLetterSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return ((1 shl getCategory(props)) and LETTER_MASK) != 0
     }
 
-    fun isDigit(codepoint: Int): Boolean {
+    private fun isDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return getCategory(props) == CharacterData.CAT_ND
     }
 
-    fun isLetterOrDigit(codepoint: Int): Boolean {
+    private fun isLetterOrDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return ((1 shl getCategory(props)) and LETTER_OR_DIGIT_MASK) != 0
     }
 
-    fun isUpperCase(codepoint: Int): Boolean {
+    private fun isUpperCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return getCategory(props) == CharacterData.CAT_LU ||
             (props and CharacterData.IS_OTHER_UPPERCASE_BIT) != 0
     }
 
-    fun isLowerCase(codepoint: Int): Boolean {
+    private fun isLowerCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return getCategory(props) == CharacterData.CAT_LL ||
             (props and CharacterData.IS_OTHER_LOWERCASE_BIT) != 0
     }
 
-    fun toLowerCase(codepoint: Int): Int {
-        if (isAscii(codepoint)) {
-            return asciiToLowerCase(codepoint)
-        }
-
+    private fun toLowerCaseSlow(codepoint: Int): Int {
         val props = CharacterData.getProperties(codepoint)
 
         if (hasLargeLowercaseDelta(props)) {
@@ -86,11 +116,7 @@ object Codepoints {
         }
     }
 
-    fun toUpperCase(codepoint: Int): Int {
-        if (isAscii(codepoint)) {
-            return asciiToUpperCase(codepoint)
-        }
-
+    private fun toUpperCaseSlow(codepoint: Int): Int {
         val props = CharacterData.getProperties(codepoint)
 
         // Special handling for titlecase letters (Lt) - these map to their uppercase variants
@@ -115,27 +141,23 @@ object Codepoints {
         }
     }
 
-    fun isSpaceChar(codepoint: Int): Boolean {
+    private fun isSpaceCharSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return ((1 shl getCategory(props)) and SPACE_CHAR_MASK) != 0
     }
 
-    fun isWhitespace(codepoint: Int): Boolean {
+    private fun isWhitespaceSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_WHITESPACE_BIT) != 0
     }
 
-    fun isIdeographic(codepoint: Int): Boolean {
+    private fun isIdeographicSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_IDEOGRAPHIC_BIT) != 0
     }
 
-    fun isIdentifierIgnorable(codepoint: Int): Boolean {
-        // Control characters that are ignorable in identifiers:
-        // U+0000..U+0008: <control> (NUL through BACKSPACE)
-        // U+000E..U+001B: <control> (SHIFT OUT through ESCAPE)
-        // U+007F..U+009F: <control> (DELETE through APPLICATION PROGRAM COMMAND)
-        if (codepoint <= 0x08 || (codepoint in 0x0E..0x1B) || (codepoint in 0x7F..0x9F)) {
+    private fun isIdentifierIgnorableSlow(codepoint: Int): Boolean {
+        if (codepoint in 0x7F..0x9F) {
             return true
         }
         // Also ignorable: Format characters (category Cf)
@@ -143,29 +165,75 @@ object Codepoints {
         return getCategory(props) == CharacterData.CAT_CF
     }
 
-    fun isUnicodeIdentifierStart(codepoint: Int): Boolean {
+    private fun isUnicodeIdentifierStartSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_UNICODE_ID_START_BIT) != 0
     }
 
-    fun isUnicodeIdentifierPart(codepoint: Int): Boolean {
+    private fun isUnicodeIdentifierPartSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_UNICODE_ID_PART_BIT) != 0
     }
 
-    fun isJavaIdentifierStart(codepoint: Int): Boolean {
+    private fun isJavaIdentifierStartSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_JAVA_ID_START_BIT) != 0
     }
 
-    fun isJavaIdentifierPart(codepoint: Int): Boolean {
+    private fun isJavaIdentifierPartSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
         return (props and CharacterData.IS_JAVA_ID_PART_BIT) != 0
     }
+
+    fun isLetter(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiLetter(codepoint) else isLetterSlow(codepoint)
+
+    fun isDigit(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiDigit(codepoint) else isDigitSlow(codepoint)
+
+    fun isLetterOrDigit(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiLetter(codepoint) || isAsciiDigit(codepoint) else isLetterOrDigitSlow(codepoint)
+
+    fun isUpperCase(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiUppercaseLetter(codepoint) else isUpperCaseSlow(codepoint)
+
+    fun isLowerCase(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiLowercaseLetter(codepoint) else isLowerCaseSlow(codepoint)
+
+    fun toLowerCase(codepoint: Int): Int =
+        if (isAscii(codepoint)) asciiToLowerCase(codepoint) else toLowerCaseSlow(codepoint)
+
+    fun toUpperCase(codepoint: Int): Int =
+        if (isAscii(codepoint)) asciiToUpperCase(codepoint) else toUpperCaseSlow(codepoint)
+
+    fun isSpaceChar(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) codepoint == ASCII_SPACE else isSpaceCharSlow(codepoint)
+
+    fun isWhitespace(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiWhitespace(codepoint) else isWhitespaceSlow(codepoint)
+
+    fun isIdeographic(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) false else isIdeographicSlow(codepoint)
+
+    fun isIdentifierIgnorable(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiIdentifierIgnorable(codepoint) else isIdentifierIgnorableSlow(codepoint)
+
+    fun isUnicodeIdentifierStart(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiLetter(codepoint) else isUnicodeIdentifierStartSlow(codepoint)
+
+    fun isUnicodeIdentifierPart(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiUnicodeIdentifierPart(codepoint) else isUnicodeIdentifierPartSlow(codepoint)
+
+    fun isJavaIdentifierStart(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiJavaIdentifierStart(codepoint) else isJavaIdentifierStartSlow(codepoint)
+
+    fun isJavaIdentifierPart(codepoint: Int): Boolean =
+        if (isAscii(codepoint)) isAsciiJavaIdentifierPart(codepoint) else isJavaIdentifierPartSlow(codepoint)
 
     fun isISOControl(codepoint: Int): Boolean =
         // C0 control codes (U+0000..U+001F) and C1 control codes (U+007F..U+009F)
         codepoint in 0x00..0x1F || codepoint in 0x7F..0x9F
 
-    fun getUnicodeScript(codepoint: Int): UnicodeScript = ScriptData.getScript(codepoint)
+    fun getUnicodeScript(codepoint: Int): UnicodeScript =
+        if (isAscii(codepoint)) getAsciiUnicodeScript(codepoint) else ScriptData.getScript(codepoint)
 }

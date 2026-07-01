@@ -89,6 +89,7 @@ class CodepointTest {
         assertTrue(Codepoint('A'.code).isUnicodeIdentifierPart())
         assertTrue(Codepoint('a'.code).isUnicodeIdentifierPart())
         assertTrue(Codepoint('0'.code).isUnicodeIdentifierPart())
+        assertTrue(Codepoint('_'.code).isUnicodeIdentifierPart())
         assertFalse(Codepoint(' '.code).isUnicodeIdentifierPart())
     }
 
@@ -105,6 +106,8 @@ class CodepointTest {
         assertTrue(Codepoint('A'.code).isJavaIdentifierPart())
         assertTrue(Codepoint('a'.code).isJavaIdentifierPart())
         assertTrue(Codepoint('0'.code).isJavaIdentifierPart())
+        assertTrue(Codepoint(0x00).isJavaIdentifierPart())
+        assertTrue(Codepoint(0x7F).isJavaIdentifierPart())
         assertFalse(Codepoint(' '.code).isJavaIdentifierPart())
     }
 
@@ -154,6 +157,9 @@ class CodepointTest {
         assertFalse(invalidCp.isDigit())
         assertFalse(invalidCp.isUpperCase())
         assertFalse(invalidCp.isLowerCase())
+        assertFalse(invalidCp.isIdentifierIgnorable())
+        assertFalse(invalidCp.isJavaIdentifierPart())
+        assertFalse(invalidCp.isUnicodeIdentifierPart())
     }
 
     @Test
