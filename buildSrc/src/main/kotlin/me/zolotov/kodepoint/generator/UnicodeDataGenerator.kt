@@ -19,6 +19,21 @@ import kotlin.io.path.deleteRecursively
 @Suppress("unused")
 @OptIn(ExperimentalPathApi::class)
 fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: String) {
+    generateUnicodeData(
+        outputDir = outputDir,
+        cacheDir = cacheDir,
+        additionalComment = additionalComment,
+        characterDataMetricsOutput = null
+    )
+}
+
+@OptIn(ExperimentalPathApi::class)
+fun generateUnicodeData(
+    outputDir: Path,
+    cacheDir: Path,
+    additionalComment: String,
+    characterDataMetricsOutput: Path?
+) {
     println("Running Kodepoint Generator...")
     println("Unicode version: $UNICODE_VERSION")
 
@@ -50,12 +65,14 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
 
     println("Packing properties by plane (with byte indices)...")
     val propertyBuildResult = buildPropertyTables(characterProperties)
-    val totalPropertySize = propertyBuildResult.planeResults.sumOf { it.size } + propertyBuildResult.uniqueCharacterProperties.size * 4
-    println("Total property table size: $totalPropertySize bytes (includes ${propertyBuildResult.uniqueCharacterProperties.size * 4}b value lookup)")
+    val uniquePropertyValuesBytes = propertyBuildResult.uniqueCharacterProperties.size * Int.SIZE_BYTES
+    println("CharacterData unique property values: $uniquePropertyValuesBytes bytes")
 
     println("Build large case deltas...")
     val largeCaseDeltaRanges = buildLargeCaseDeltas(unicodeData.characters, characterProperties)
     println("Large case delta ranges: ${largeCaseDeltaRanges.toLower.size} toLower ranges, ${largeCaseDeltaRanges.toUpper.size} toUpper ranges")
+    val characterDataMetrics = buildCharacterDataSizeMetrics(propertyBuildResult, largeCaseDeltaRanges)
+    println("Total character data size: ${characterDataMetrics.totalBytes} bytes")
 
     println("Building script tables by plane...")
     val scriptBuildResult = buildScriptTables(unicodeData.scripts)
@@ -75,7 +92,7 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
     println("Total script table size: $totalScriptSize bytes")
     println("Script count: ${scriptBuildResult.scriptNames.size}")
 
-    val totalSize = totalPropertySize + totalScriptSize
+    val totalSize = characterDataMetrics.totalBytes + totalScriptSize
     println("Total generated data size: $totalSize bytes")
 
     outputDir.deleteRecursively()
@@ -83,6 +100,10 @@ fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: Stri
 
     generateCharacterDataClasses(generatedDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
     generateScriptDataClasses(generatedDir, scriptBuildResult, additionalComment)
+    characterDataMetricsOutput?.let {
+        characterDataMetrics.writeBencherMetricFormat(it)
+        println("Wrote CharacterData Bencher metrics to $it")
+    }
 
     println("Generation complete!")
 }

@@ -13,6 +13,9 @@ This module contains the `kodepoint` benchmark suite.
 
 # Wasm-only quick benchmarks
 ./gradlew :benchmarks:wasmJsQuickBenchmark
+
+# CharacterData size metrics (Bencher Metric Format)
+./gradlew :unicode:characterDataMetrics
 ```
 
 ## Benchmark Categories
@@ -29,12 +32,13 @@ This module contains the `kodepoint` benchmark suite.
 - `isWhitespace`, `isJavaIdentifierStart`, `isJavaIdentifierPart`
 
 Results are written to `benchmarks/build/reports/benchmarks/`.
+CharacterData size metrics are written to `unicode/build/reports/character-data/bencher-metrics.json`.
 
 ## Bencher Integration
 
 GitHub Actions builds self-contained JVM and Wasm benchmark images, pushes them to the Bencher OCI registry, and runs them on Bencher Bare Metal on pushes to `main` and on pull requests from branches in this repository.
 The image definitions live under `benchmarks/docker/`.
-CI builds the JVM JMH jar and the packaged Wasm Node executable with Corretto 24, then tracks them on separate Bencher testbeds. The Wasm image runs the prebuilt Node/Wasm executable and converts the resulting `kotlinx-benchmark` JSON report into Bencher Metric Format before upload.
+CI builds the JVM JMH jar and the packaged Wasm Node executable with Corretto 24, then tracks them on separate Bencher testbeds. The Wasm image runs the prebuilt Node/Wasm executable and converts the resulting `kotlinx-benchmark` JSON report into Bencher Metric Format before upload. A separate GitHub Actions job generates deterministic `CharacterData` size metrics directly from the Unicode generator and uploads them once per revision.
 
 To enable it, add:
 
@@ -44,5 +48,6 @@ To enable it, add:
 
 The Bencher Bare Metal run uses a dedicated `intel-v1-corretto24-jmh-nonfork` testbed and a reduced non-forked JMH profile so the full suite fits within the Bencher Free tier's 5 minute job timeout.
 Wasm benchmarks are tracked separately on the `intel-v1-corretto24-node22-wasmjs` testbed so Node/Wasm results do not mix with JVM history.
+CharacterData size metrics are tracked on the `github-ubuntu-latest-character-data` testbed with one `bytes` measure per generated table plus the overall total.
 
 Closed pull requests automatically archive their Bencher branch. Fork pull requests do not upload results because GitHub does not expose repository secrets to them.
