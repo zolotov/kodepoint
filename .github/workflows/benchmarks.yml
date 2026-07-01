@@ -391,6 +391,10 @@ jobs:
             --hash "$GITHUB_SHA" \
             --testbed "$BENCHER_TESTBED" \
             --threshold-measure bytes \
+            --threshold-test percentage \
+            --threshold-max-sample-size 1 \
+            --threshold-upper-boundary 0.0 \
+            --thresholds-reset \
             --error-on-alert \
             --adapter json \
             --file unicode/build/reports/character-data/bencher-metrics.json \
@@ -413,12 +417,13 @@ jobs:
             --hash "$PR_HEAD_SHA" \
             --start-point "$GITHUB_BASE_REF" \
             --start-point-hash "$PR_BASE_SHA" \
+            --start-point-clone-thresholds \
             --start-point-reset \
             --testbed "$BENCHER_TESTBED" \
-            --threshold-measure bytes \
             --error-on-alert \
             --adapter json \
             --file unicode/build/reports/character-data/bencher-metrics.json \
             --github-actions "$GITHUB_TOKEN" \
             --ci-id character-data \
+            --ci-only-thresholds \
             --ci-public-links
