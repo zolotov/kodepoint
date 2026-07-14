@@ -101,8 +101,8 @@ fun generateUnicodeData(
     generateCharacterDataClasses(generatedDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
     generateScriptDataClasses(generatedDir, scriptBuildResult, additionalComment)
     characterDataMetricsOutput?.let {
-        characterDataMetrics.writeBencherMetricFormat(it)
-        println("Wrote CharacterData Bencher metrics to $it")
+        characterDataMetrics.writeJson(it)
+        println("Wrote CharacterData metrics to $it")
     }
 
     println("Generation complete!")

@@ -1,0 +1,572 @@
+:root {
+    color-scheme: light;
+    --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --bg: #f6f3ed;
+    --paper: #fffdf9;
+    --surface: #fffdf9;
+    --ink: #23180f;
+    --muted: #6f6256;
+    --line: rgba(50, 36, 24, 0.14);
+    --grid: rgba(50, 36, 24, 0.09);
+    --accent: #005c53;
+    --accent-soft: rgba(0, 92, 83, 0.08);
+    --series: #2a78d6;
+    --spark: #9a8d7d;
+    --warn: #b24c36;
+    --warn-soft: rgba(178, 76, 54, 0.1);
+    --good: #2c7a4b;
+    --good-soft: rgba(44, 122, 75, 0.1);
+    --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --bg: #191410;
+        --paper: #221c15;
+        --surface: #221c15;
+        --ink: #f0e8dc;
+        --muted: #b0a190;
+        --line: rgba(240, 232, 220, 0.16);
+        --grid: rgba(240, 232, 220, 0.1);
+        --accent: #57bfb2;
+        --accent-soft: rgba(87, 191, 178, 0.1);
+        --series: #3987e5;
+        --spark: #8d8172;
+        --warn: #e08a70;
+        --warn-soft: rgba(224, 138, 112, 0.14);
+        --good: #79c288;
+        --good-soft: rgba(121, 194, 136, 0.14);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Author display rules (grid/flex) would otherwise override the UA rule for [hidden]. */
+[hidden] {
+    display: none !important;
+}
+
+/* The page stays unpainted until app.js finishes rendering, so it appears once,
+   fully populated — no header-only intermediate frame. */
+body[data-loading] .page-shell {
+    visibility: hidden;
+}
+
+html {
+    /* Reserve the scrollbar gutter up front so content does not shift sideways
+       when the rendered page becomes taller than the viewport. */
+    overflow-y: scroll;
+}
+
+body {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    background: var(--bg);
+}
+
+a {
+    color: var(--accent);
+}
+
+code, pre {
+    font-family: var(--font-mono);
+}
+
+.page-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 24px 56px;
+}
+
+.page-header,
+.panel,
+.suite-section,
+.toolbar {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px 48px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+
+.page-header h1 {
+    margin: 4px 0 0;
+    font-size: 1.35rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.panel h2,
+.suite-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.meta-list {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    min-width: 300px;
+}
+
+.meta-list div {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+}
+
+dt {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.changes-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.group-label,
+.empty-state {
+    color: var(--muted);
+}
+
+.panel,
+.suite-section {
+    padding: 16px 20px 18px;
+}
+
+.panel-header,
+.suite-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.suite-header span {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.suite-section {
+    margin-bottom: 16px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+}
+
+.suite-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suite-nav a {
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.88rem;
+}
+
+.suite-nav a:hover {
+    text-decoration: underline;
+}
+
+.filter-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-label {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.filter-field input {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-width: 220px;
+}
+
+.filter-field input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.suite-table {
+    min-width: 720px;
+}
+
+.panel td code {
+    overflow-wrap: anywhere;
+}
+
+th,
+td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    text-align: left;
+}
+
+th {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+td {
+    font-size: 0.9rem;
+}
+
+/* No divider after the last row of an island. Suite tables end with a (usually
+   hidden) detail row, so the preceding benchmark row is cleared as well. */
+tbody tr:last-child > td,
+tbody tr.benchmark-row:nth-last-child(2) > td {
+    border-bottom: none;
+}
+
+td.numeric {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.group-label {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+}
+
+tr.benchmark-row {
+    cursor: pointer;
+}
+
+tr.benchmark-row:hover td,
+tr.benchmark-row:focus-within td {
+    background: var(--accent-soft);
+}
+
+.row-toggle {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.row-toggle::before {
+    content: "▸";
+    color: var(--muted);
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+}
+
+.row-toggle[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.row-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.delta-improvement {
+    color: var(--good);
+    background: var(--good-soft);
+}
+
+.delta-regression {
+    color: var(--warn);
+    background: var(--warn-soft);
+}
+
+.delta-neutral {
+    color: var(--muted);
+}
+
+.delta-improvement,
+.delta-regression,
+.delta-neutral {
+    border-radius: 4px;
+    padding: 2px 8px;
+    display: inline-flex;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.key-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    margin-right: 6px;
+}
+
+.key-kodepoint,
+.bar-kodepoint {
+    background: var(--series);
+}
+
+.key-jvm,
+.bar-jvm {
+    background: var(--spark);
+}
+
+.compare-bars {
+    display: grid;
+    gap: 2px;
+    min-width: 160px;
+    max-width: 220px;
+}
+
+.compare-bars .bar {
+    display: block;
+    height: 7px;
+    border-radius: 0 3px 3px 0;
+}
+
+.sparkline {
+    width: 152px;
+    height: 36px;
+    display: block;
+}
+
+.sparkline polyline {
+    stroke: var(--spark);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.sparkline .spark-end {
+    fill: var(--series);
+    stroke: var(--surface);
+    stroke-width: 2;
+}
+
+.sparkline-empty {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.detail-row > td {
+    padding: 0 10px 14px;
+    background: none;
+}
+
+.chart-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 12px 16px 8px;
+    margin-top: 10px;
+}
+
+.chart-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.chart-card-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+.chart-card-header span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.chart-wrap {
+    position: relative;
+}
+
+.chart-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.chart-wrap svg:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.chart-grid line {
+    stroke: var(--grid);
+    stroke-width: 1;
+}
+
+.chart-axis text {
+    fill: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.chart-band,
+.chart-area {
+    fill: var(--series);
+    opacity: 0.1;
+}
+
+.chart-line {
+    fill: none;
+    stroke: var(--series);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.chart-dot {
+    fill: var(--series);
+    stroke: var(--surface);
+    stroke-width: 2;
+}
+
+.chart-crosshair {
+    stroke: var(--muted);
+    stroke-width: 1;
+}
+
+.chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-width: 150px;
+    z-index: 2;
+}
+
+.chart-tooltip .tooltip-value {
+    display: block;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.chart-tooltip .tooltip-meta {
+    display: block;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.chart-hint {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin: 6px 0 4px;
+}
+
+.empty-state {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.page-empty {
+    padding: 24px;
+}
+
+@media (max-width: 1080px) {
+    .changes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .page-shell {
+        padding: 20px 14px 40px;
+    }
+
+    .page-header,
+    .panel,
+    .suite-section {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .toolbar {
+        padding: 10px;
+    }
+}

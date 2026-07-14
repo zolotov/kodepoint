@@ -10,183 +10,75 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
-  checks: write
-  pull-requests: write
 
 concurrency:
   group: benchmarks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  BENCHMARK_PAGES_URL: ${{ format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+
 jobs:
+  # Starts the (normally stopped) GCE benchmark runner on demand. Runs only when a
+  # self-hosted runner is configured together with Workload Identity Federation;
+  # otherwise it is skipped and the benchmark job proceeds on GitHub-hosted runners.
+  # The instance stops itself again after 30 idle minutes (see benchmarks/README.md).
+  start-runner:
+    name: Start Benchmark Runner
+    if: >-
+      ${{ vars.BENCHMARK_RUNNER != '' && vars.GCP_RUNNER_WIF_PROVIDER != '' &&
+          (github.event_name != 'pull_request' ||
+           (!github.event.pull_request.draft && !github.event.pull_request.head.repo.fork)) }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_RUNNER_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_RUNNER_SERVICE_ACCOUNT }}
+          token_format: access_token
+          # Only the access_token output is used; no need to write credentials to disk.
+          create_credentials_file: false
+
+      - name: Start runner instance
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          INSTANCE_PATH: ${{ vars.GCP_RUNNER_INSTANCE }}
+        run: |
+          # Starting an already-running instance is a no-op, so this is safe on every run.
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "Content-Length: 0" \
+            "https://compute.googleapis.com/compute/v1/${INSTANCE_PATH}/start" > /dev/null
+          echo "Requested start of ${INSTANCE_PATH}."
+
   benchmark:
-    name: JVM Benchmarks
+    name: Run Benchmarks
+    needs: start-runner
+    if: >-
+      ${{ !cancelled() &&
+          (needs.start-runner.result == 'success' || needs.start-runner.result == 'skipped') &&
+          (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
+    # Fork PRs never run on the self-hosted runner: a fork PR executes untrusted
+    # code, which must not happen on a persistent private machine.
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork)
+          && 'ubuntu-latest'
+          || (vars.BENCHMARK_RUNNER != '' && vars.BENCHMARK_RUNNER || 'ubuntu-latest') }}
 
-    # Bencher secrets are intentionally not exposed to fork pull requests.
-    if: >
-      github.event_name == 'push' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       !github.event.pull_request.draft)
-
-    runs-on: ubuntu-latest
-
-    env:
-      BENCHER_PROJECT: ${{ vars.BENCHER_PROJECT }}
-      BENCHER_USER_EMAIL: ${{ vars.BENCHER_USER_EMAIL }}
-      BENCHER_TESTBED: intel-v1-corretto24-jmh-nonfork
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: Validate Bencher configuration
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-        run: |
-          if [ -z "$BENCHER_PROJECT" ]; then
-            echo "::error::Missing repository variable BENCHER_PROJECT."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_USER_EMAIL" ]; then
-            echo "::error::Missing repository variable BENCHER_USER_EMAIL."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_API_KEY" ]; then
-            echo "::error::Missing repository secret BENCHER_API_KEY."
-            exit 1
-          fi
-
-          case "$BENCHER_API_KEY" in
-            bencher_user_*) ;;
-            *)
-              echo "::error::BENCHER_API_KEY must be a user-scoped Bencher API key (bencher_user_*)."
-              exit 1
-              ;;
-          esac
-
-      - name: Setup Java
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
-        with:
-          distribution: "corretto"
-          java-version: 24
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
-
-      - name: Build runnable JMH jar
-        run: ./gradlew :benchmarks:jvmBenchmarkJar
-
-      - name: Compute image tag
-        id: image
-        run: |
-          {
-            echo "tag=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-            echo "reference=registry.bencher.dev/${BENCHER_PROJECT}:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-            echo "image=${BENCHER_PROJECT}:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
-
-      - name: Log in to Bencher registry
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
-        with:
-          registry: registry.bencher.dev
-          username: ${{ vars.BENCHER_USER_EMAIL }}
-          password: ${{ secrets.BENCHER_API_KEY }}
-
-      - name: Build and push benchmark image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: ./benchmarks
-          file: ./benchmarks/docker/benchmarks.Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.image.outputs.reference }}
-
-      - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
-        with:
-          version: 0.6.8
-
-      - name: Track main bare-metal benchmark history in Bencher
-        if: github.event_name == 'push'
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_REF_NAME" \
-            --hash "$GITHUB_SHA" \
-            --image "${{ steps.image.outputs.image }}" \
-            --testbed "$BENCHER_TESTBED" \
-            --spec intel-v1 \
-            --job-timeout 300 \
-            --threshold-measure throughput \
-            --threshold-test t_test \
-            --threshold-max-sample-size 64 \
-            --threshold-lower-boundary 0.99 \
-            --thresholds-reset \
-            --error-on-alert \
-            --adapter java_jmh \
-            --file /tmp/kodepoint-jmh-results.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id jvm \
-            --ci-public-links
-
-      - name: Track pull request bare-metal benchmarks in Bencher
-        if: github.event_name == 'pull_request'
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_HEAD_REF" \
-            --hash "$PR_HEAD_SHA" \
-            --start-point "$GITHUB_BASE_REF" \
-            --start-point-hash "$PR_BASE_SHA" \
-            --start-point-clone-thresholds \
-            --start-point-reset \
-            --image "${{ steps.image.outputs.image }}" \
-            --testbed "$BENCHER_TESTBED" \
-            --spec intel-v1 \
-            --job-timeout 300 \
-            --error-on-alert \
-            --adapter java_jmh \
-            --file /tmp/kodepoint-jmh-results.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id jvm \
-            --ci-only-thresholds \
-            --ci-public-links
-
-  benchmark-wasm:
-    name: Wasm Benchmarks
-
-    # Bencher secrets are intentionally not exposed to fork pull requests.
-    if: >
-      github.event_name == 'push' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       !github.event.pull_request.draft)
-
-    runs-on: ubuntu-latest
-
-    env:
-      BENCHER_PROJECT: ${{ vars.BENCHER_PROJECT }}
-      BENCHER_USER_EMAIL: ${{ vars.BENCHER_USER_EMAIL }}
-      BENCHER_TESTBED: intel-v1-corretto24-node22-wasmjs
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout sources
@@ -194,246 +86,104 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate Bencher configuration
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-        run: |
-          if [ -z "$BENCHER_PROJECT" ]; then
-            echo "::error::Missing repository variable BENCHER_PROJECT."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_USER_EMAIL" ]; then
-            echo "::error::Missing repository variable BENCHER_USER_EMAIL."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_API_KEY" ]; then
-            echo "::error::Missing repository secret BENCHER_API_KEY."
-            exit 1
-          fi
-
-          case "$BENCHER_API_KEY" in
-            bencher_user_*) ;;
-            *)
-              echo "::error::BENCHER_API_KEY must be a user-scoped Bencher API key (bencher_user_*)."
-              exit 1
-              ;;
-          esac
-
       - name: Setup Java
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5
         with:
           distribution: "corretto"
           java-version: 24
 
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
-      - name: Build runnable Wasm package
-        run: ./gradlew :benchmarks:wasmJsBenchmarkPackage
-
-      - name: Compute image tag
-        id: image
+      - name: Seed previous benchmark history
         run: |
-          {
-            echo "tag=wasm-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-            echo "reference=registry.bencher.dev/${BENCHER_PROJECT}:wasm-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-            echo "image=${BENCHER_PROJECT}:wasm-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
-          } >> "$GITHUB_OUTPUT"
+          mkdir -p benchmarks/build/pages-seed/data
+          history_file=benchmarks/build/pages-seed/data/history.json
+          status=$(curl -sSL --retry 5 -o "$history_file" -w "%{http_code}" \
+            "${BENCHMARK_PAGES_URL%/}/data/history.json") || status=000
+          if [ "$status" = "200" ]; then
+            echo "Seeded benchmark history from ${BENCHMARK_PAGES_URL}."
+          elif [ "$status" = "404" ]; then
+            echo "No published history yet (HTTP 404); starting a fresh history."
+            rm -f "$history_file"
+          else
+            echo "::error::Failed to download benchmark history (HTTP ${status}). Refusing to continue, because publishing without it would wipe the trend data."
+            exit 1
+          fi
 
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
-
-      - name: Log in to Bencher registry
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
-        with:
-          registry: registry.bencher.dev
-          username: ${{ vars.BENCHER_USER_EMAIL }}
-          password: ${{ secrets.BENCHER_API_KEY }}
-
-      - name: Build and push benchmark image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: ./benchmarks/docker/wasm-benchmarks.Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.image.outputs.reference }}
-
-      - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
-        with:
-          version: 0.6.8
-
-      - name: Track main bare-metal Wasm benchmark history in Bencher
-        if: github.event_name == 'push'
+      - name: Run Gradle benchmark pipeline
         env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The Pages site only reflects runs that deploy to it (pushes to main).
+          # PR reports must not link there, so the site URL is omitted for them.
+          IS_DEPLOYED_RUN: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_REF_NAME" \
-            --hash "$GITHUB_SHA" \
-            --image "${{ steps.image.outputs.image }}" \
-            --testbed "$BENCHER_TESTBED" \
-            --spec intel-v1 \
-            --job-timeout 300 \
-            --threshold-measure throughput \
-            --threshold-test t_test \
-            --threshold-max-sample-size 64 \
-            --threshold-lower-boundary 0.99 \
-            --thresholds-reset \
-            --error-on-alert \
-            --adapter json \
-            --file /tmp/kodepoint-wasm-results.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id wasmjs \
-            --ci-public-links
+          args=(-PbenchmarkHistoryFile=benchmarks/build/pages-seed/data/history.json)
+          if [ "$IS_DEPLOYED_RUN" = "true" ]; then
+            args+=("-PbenchmarkSiteUrl=$BENCHMARK_PAGES_URL")
+          fi
+          ./gradlew :benchmarks:ciBenchmark "${args[@]}"
 
-      - name: Track pull request bare-metal Wasm benchmarks in Bencher
-        if: github.event_name == 'pull_request'
+      - name: Upload benchmark artifacts
+        id: artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: benchmark-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: benchmarks/build/ci
+          if-no-files-found: error
+
+      - name: Comment benchmark summary on PR
+        if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_HEAD_REF" \
-            --hash "$PR_HEAD_SHA" \
-            --start-point "$GITHUB_BASE_REF" \
-            --start-point-hash "$PR_BASE_SHA" \
-            --start-point-clone-thresholds \
-            --start-point-reset \
-            --image "${{ steps.image.outputs.image }}" \
-            --testbed "$BENCHER_TESTBED" \
-            --spec intel-v1 \
-            --job-timeout 300 \
-            --error-on-alert \
-            --adapter json \
-            --file /tmp/kodepoint-wasm-results.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id wasmjs \
-            --ci-only-thresholds \
-            --ci-public-links
+          ARTIFACT_URL: ${{ steps.artifact.outputs['artifact-url'] }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- kodepoint-benchmark-report -->';
+            const summary = fs.readFileSync('benchmarks/build/ci/report/summary.md', 'utf8');
+            const artifactUrl = process.env.ARTIFACT_URL;
+            const artifactNote = artifactUrl
+              ? `\n- Interactive report: download the [benchmark-report artifact](${artifactUrl}) and open \`site/index.html\`.\n`
+              : '';
+            const body = `${marker}\n${summary}${artifactNote}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
 
-  character-data-size:
-    name: CharacterData Size Metrics
+      - name: Upload benchmark pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: benchmarks/build/ci/site
 
-    # Bencher secrets are intentionally not exposed to fork pull requests.
-    if: >
-      github.event_name == 'push' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       !github.event.pull_request.draft)
-
+  deploy-pages:
+    name: Deploy Benchmark Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: benchmark
     runs-on: ubuntu-latest
 
-    env:
-      BENCHER_PROJECT: ${{ vars.BENCHER_PROJECT }}
-      BENCHER_USER_EMAIL: ${{ vars.BENCHER_USER_EMAIL }}
-      BENCHER_TESTBED: github-ubuntu-latest-character-data
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-        with:
-          persist-credentials: false
-
-      - name: Validate Bencher configuration
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-        run: |
-          if [ -z "$BENCHER_PROJECT" ]; then
-            echo "::error::Missing repository variable BENCHER_PROJECT."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_USER_EMAIL" ]; then
-            echo "::error::Missing repository variable BENCHER_USER_EMAIL."
-            exit 1
-          fi
-
-          if [ -z "$BENCHER_API_KEY" ]; then
-            echo "::error::Missing repository secret BENCHER_API_KEY."
-            exit 1
-          fi
-
-          case "$BENCHER_API_KEY" in
-            bencher_user_*) ;;
-            *)
-              echo "::error::BENCHER_API_KEY must be a user-scoped Bencher API key (bencher_user_*)."
-              exit 1
-              ;;
-          esac
-
-      - name: Setup Java
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
-        with:
-          distribution: "corretto"
-          java-version: 24
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
-
-      - name: Generate CharacterData size metrics
-        run: ./gradlew :unicode:characterDataMetrics
-
-      - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
-        with:
-          version: 0.6.8
-
-      - name: Track main CharacterData size history in Bencher
-        if: github.event_name == 'push'
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_REF_NAME" \
-            --hash "$GITHUB_SHA" \
-            --testbed "$BENCHER_TESTBED" \
-            --threshold-measure bytes \
-            --threshold-test percentage \
-            --threshold-max-sample-size 1 \
-            --threshold-upper-boundary 0.0 \
-            --thresholds-reset \
-            --error-on-alert \
-            --adapter json \
-            --file unicode/build/reports/character-data/bencher-metrics.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id character-data \
-            --ci-public-links
-
-      - name: Track pull request CharacterData size metrics in Bencher
-        if: github.event_name == 'pull_request'
-        env:
-          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          bencher run \
-            --project "$BENCHER_PROJECT" \
-            --key "$BENCHER_API_KEY" \
-            --branch "$GITHUB_HEAD_REF" \
-            --hash "$PR_HEAD_SHA" \
-            --start-point "$GITHUB_BASE_REF" \
-            --start-point-hash "$PR_BASE_SHA" \
-            --start-point-clone-thresholds \
-            --start-point-reset \
-            --testbed "$BENCHER_TESTBED" \
-            --error-on-alert \
-            --adapter json \
-            --file unicode/build/reports/character-data/bencher-metrics.json \
-            --github-actions "$GITHUB_TOKEN" \
-            --ci-id character-data \
-            --ci-only-thresholds \
-            --ci-public-links
+      - name: Deploy benchmark pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

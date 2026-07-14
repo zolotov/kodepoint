@@ -148,4 +148,4 @@ JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this charac
 
 ## Benchmarks
 
-Benchmark commands, categories, and Bencher Bare Metal setup live in [`benchmarks/README.md`](benchmarks/README.md).
+Benchmark commands, categories, and the Gradle-driven GitHub reporting pipeline live in [`benchmarks/README.md`](benchmarks/README.md).

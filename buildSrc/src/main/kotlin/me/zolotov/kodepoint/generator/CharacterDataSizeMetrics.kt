@@ -19,7 +19,7 @@ class CharacterDataSizeMetrics(
 ) {
     val totalBytes: Int = metrics.first { it.benchmark == CHARACTER_DATA_TOTAL_BENCHMARK }.bytes
 
-    fun writeBencherMetricFormat(outputPath: Path) {
+    fun writeJson(outputPath: Path) {
         outputPath.parent?.createDirectories()
         outputPath.writeText(
             buildString {

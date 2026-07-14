@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Kodepoint Benchmarks</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-loading>
+  <div class="page-shell">
+    <header class="page-header">
+      <div class="page-header-copy">
+        <p class="eyebrow">Kodepoint</p>
+        <h1>Benchmark Results</h1>
+      </div>
+      <dl class="meta-list" id="meta-list"></dl>
+    </header>
+
+    <section class="changes-grid" id="changes"></section>
+
+    <div class="toolbar" id="toolbar">
+      <nav class="suite-nav" id="suite-nav" aria-label="Benchmark suites"></nav>
+      <label class="filter-field">
+        <span class="filter-label">Filter</span>
+        <input type="search" id="filter-input" placeholder="Benchmark name…" autocomplete="off">
+      </label>
+    </div>
+
+    <section id="jvm-comparison"></section>
+
+    <main id="suites"></main>
+
+    <p class="empty-state page-empty" id="load-error" hidden>
+      Benchmark data could not be loaded. Run <code>./gradlew :benchmarks:ciBenchmark</code> and open
+      <code>benchmarks/build/ci/site/index.html</code>, or serve this directory over HTTP.
+    </p>
+  </div>
+
+  <script src="data/data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
