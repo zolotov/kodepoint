@@ -12,10 +12,19 @@ import me.zolotov.kodepoint.script.UnicodeScript
  * Unicode character property functions.
  */
 object Codepoints {
-    private const val ASCII_DELETE = 0x7F
-    private const val ASCII_DOLLAR = 0x24
     private const val ASCII_SPACE = 0x20
-    private const val ASCII_UNDERSCORE = 0x5F
+
+    // 128-bit ASCII membership bitmaps split into two Longs (codepoints 0..63 and 64..127).
+    // A branchless bit test replaces chains of range checks whose branches are
+    // data-dependent and mispredict on mixed ASCII input.
+    private const val ASCII_ID_IGNORABLE_LO = 0x0FFFC1FFL // 0x00..0x08, 0x0E..0x1B
+    private const val ASCII_ID_IGNORABLE_HI = Long.MIN_VALUE // 0x7F
+    private const val ASCII_UNICODE_ID_PART_LO = 0x03FF000000000000L // 0-9
+    private const val ASCII_UNICODE_ID_PART_HI = 0x07FFFFFE87FFFFFEL // A-Z, _, a-z
+    private const val ASCII_JAVA_ID_START_LO = 0x0000001000000000L // $
+    private const val ASCII_JAVA_ID_START_HI = 0x07FFFFFE87FFFFFEL // A-Z, _, a-z
+    private const val ASCII_JAVA_ID_PART_LO = 0x03FF00100FFFC1FFL // 0-9, $, 0x00..0x08, 0x0E..0x1B
+    private const val ASCII_JAVA_ID_PART_HI = -0x7800000178000002L // A-Z, _, a-z, 0x7F
 
     // Pre-computed masks for efficient multi-category checks
     private const val LETTER_MASK = (1 shl CharacterData.CAT_LU) or (1 shl CharacterData.CAT_LL) or
@@ -59,17 +68,21 @@ object Codepoints {
     private fun isAsciiWhitespace(codepoint: Int): Boolean =
         codepoint == ASCII_SPACE || (codepoint - 0x09).toUInt() <= 4u
 
+    // Long shifts use only the low 6 bits of the distance, so codepoints 64..127 index into `hi` directly.
+    private fun asciiBitTest(lo: Long, hi: Long, codepoint: Int): Boolean =
+        ((if (codepoint < 64) lo else hi) ushr codepoint) and 1L != 0L
+
     private fun isAsciiIdentifierIgnorable(codepoint: Int): Boolean =
-        codepoint in 0x00..0x08 || codepoint in 0x0E..0x1B || codepoint == ASCII_DELETE
+        asciiBitTest(ASCII_ID_IGNORABLE_LO, ASCII_ID_IGNORABLE_HI, codepoint)
 
     private fun isAsciiUnicodeIdentifierPart(codepoint: Int): Boolean =
-        isAsciiLetter(codepoint) || isAsciiDigit(codepoint) || codepoint == ASCII_UNDERSCORE
+        asciiBitTest(ASCII_UNICODE_ID_PART_LO, ASCII_UNICODE_ID_PART_HI, codepoint)
 
     private fun isAsciiJavaIdentifierStart(codepoint: Int): Boolean =
-        isAsciiLetter(codepoint) || codepoint == ASCII_DOLLAR || codepoint == ASCII_UNDERSCORE
+        asciiBitTest(ASCII_JAVA_ID_START_LO, ASCII_JAVA_ID_START_HI, codepoint)
 
     private fun isAsciiJavaIdentifierPart(codepoint: Int): Boolean =
-        isAsciiUnicodeIdentifierPart(codepoint) || codepoint == ASCII_DOLLAR || isAsciiIdentifierIgnorable(codepoint)
+        asciiBitTest(ASCII_JAVA_ID_PART_LO, ASCII_JAVA_ID_PART_HI, codepoint)
 
     private fun getAsciiUnicodeScript(codepoint: Int): UnicodeScript =
         if (isAsciiLetter(codepoint)) UnicodeScript.LATIN else UnicodeScript.COMMON

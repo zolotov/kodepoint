@@ -28,7 +28,7 @@ internal fun binarySearchRange(key: Int, ranges: IntArray, defaultValue: Int): I
     return defaultValue
 }
 
-internal fun isAscii(codepoint: Int): Boolean = codepoint ushr 7 == 0
+internal fun isAscii(codepoint: Int): Boolean = codepoint.toUInt() < 0x80u
 
 /**
  * Fast ASCII lowercase conversion.
