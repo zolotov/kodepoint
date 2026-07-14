@@ -112,7 +112,7 @@ jobs:
           tags: ${{ steps.image.outputs.reference }}
 
       - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
+        uses: bencherdev/bencher@109b0a8bbf50d04218fc2e8a1428c3f0910f0902 # main
         with:
           version: 0.6.8
 
@@ -262,7 +262,7 @@ jobs:
           tags: ${{ steps.image.outputs.reference }}
 
       - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
+        uses: bencherdev/bencher@109b0a8bbf50d04218fc2e8a1428c3f0910f0902 # main
         with:
           version: 0.6.8
 
@@ -384,7 +384,7 @@ jobs:
         run: ./gradlew :unicode:characterDataMetrics
 
       - name: Install Bencher CLI
-        uses: bencherdev/bencher@93f96f69269643942504ef5bfc2a1ed69eea2169 # main
+        uses: bencherdev/bencher@109b0a8bbf50d04218fc2e8a1428c3f0910f0902 # main
         with:
           version: 0.6.8
 
