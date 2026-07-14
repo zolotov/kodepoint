@@ -1,4 +1,5 @@
 import kotlinx.benchmark.gradle.JvmBenchmarkTarget
+import me.zolotov.kodepoint.gradle.BenchmarkReportTask
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -86,4 +87,26 @@ tasks.register("wasmJsBenchmarkPackage") {
     group = "benchmark"
     description = "Build the packaged Node/Wasm benchmark executable for 'wasmJs'"
     dependsOn("wasmJsWasmJsBenchmarkWasmJsBenchmarkProductionExecutableCompileSync")
+}
+
+tasks.register<BenchmarkReportTask>("ciBenchmark") {
+    group = "benchmark"
+    description = "Run CI benchmark targets, normalize the outputs, emit a GitHub summary, and build a Pages bundle."
+    dependsOn("jvmQuickBenchmark", "wasmJsQuickBenchmark", ":unicode:characterDataMetrics")
+
+    benchmarkReportsDirectory.set(layout.buildDirectory.dir("reports/benchmarks"))
+    characterDataMetricsFile.set(project(":unicode").layout.buildDirectory.file("reports/character-data/metrics.json"))
+    siteTemplateDirectory.set(layout.projectDirectory.dir("site"))
+    outputDirectory.set(layout.buildDirectory.dir("ci"))
+    siteUrl.convention(providers.gradleProperty("benchmarkSiteUrl"))
+    historyLimit.convention(providers.gradleProperty("benchmarkHistoryLimit").map(String::toInt).orElse(90))
+    significanceThreshold.convention(
+        providers.gradleProperty("benchmarkSignificanceThreshold").map(String::toDouble).orElse(0.03)
+    )
+
+    providers.gradleProperty("benchmarkHistoryFile").orNull?.let { historyPath ->
+        rootProject.file(historyPath)
+            .takeIf { it.isFile }
+            ?.let(historyFile::set)
+    }
 }

@@ -24,7 +24,7 @@ kotlin {
 val generateUnicodeData by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/sources/unicode-data")
     val cacheDir = layout.buildDirectory.dir("unicode-cache")
-    val characterDataMetricsReport = layout.buildDirectory.file("reports/character-data/bencher-metrics.json")
+    val characterDataMetricsReport = layout.buildDirectory.file("reports/character-data/metrics.json")
     outputs.dir(outputDir)
     outputs.file(characterDataMetricsReport)
 
@@ -40,10 +40,10 @@ val generateUnicodeData by tasks.registering {
 
 tasks.register("characterDataMetrics") {
     group = "reporting"
-    description = "Generate CharacterData size metrics in Bencher Metric Format."
+    description = "Generate CharacterData size metrics as JSON."
     dependsOn(generateUnicodeData)
     doLast {
-        println("CharacterData metrics report: ${layout.buildDirectory.file("reports/character-data/bencher-metrics.json").get().asFile}")
+        println("CharacterData metrics report: ${layout.buildDirectory.file("reports/character-data/metrics.json").get().asFile}")
     }
 }
 

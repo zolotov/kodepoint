@@ -3,3 +3,4 @@
 build/
 kotlin-js-store/
 .kotlin/
+.DS_Store
