@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var SUITE_NAMES = { jvm: 'JVM', wasmJs: 'Wasm / Node', 'character-data': 'Character Data' };
+  var SUITE_NAMES = { jvm: 'JVM', wasmJs: 'Wasm', 'character-data': 'Character Data' };
   var SUITE_ORDER = { jvm: 0, wasmJs: 1, 'character-data': 2 };
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -166,7 +166,7 @@
     var table = el('table');
     var thead = el('thead');
     var headRow = el('tr');
-    ['Benchmark', 'Current', 'Baseline', 'Delta'].forEach(function (label) {
+    ['Suite', 'Benchmark', 'Current', 'Baseline', 'Delta'].forEach(function (label) {
       headRow.appendChild(el('th', null, label));
     });
     thead.appendChild(headRow);
@@ -174,6 +174,7 @@
     var tbody = el('tbody');
     entries.forEach(function (entry) {
       var row = el('tr');
+      row.appendChild(el('td', 'suite-label', suiteName(entry.current.suite)));
       var nameCell = el('td');
       nameCell.appendChild(el('code', null, entry.current.displayName));
       row.appendChild(nameCell);

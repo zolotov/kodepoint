@@ -302,6 +302,12 @@ td.numeric {
     font-size: 0.75rem;
 }
 
+td.suite-label {
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 tr.benchmark-row {
     cursor: pointer;
 }

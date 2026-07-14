@@ -355,11 +355,11 @@ abstract class BenchmarkReportTask : DefaultTask() {
             emptyLabel
         } else {
             buildString {
-                appendLine("| Benchmark | Current | Baseline | Delta |")
-                appendLine("| --- | ---: | ---: | ---: |")
+                appendLine("| Suite | Benchmark | Current | Baseline | Delta |")
+                appendLine("| --- | --- | ---: | ---: | ---: |")
                 entries.forEach { entry ->
                     appendLine(
-                        "| `${entry.current.displayName}` | ${formatValue(entry.current)} | " +
+                        "| `${entry.current.suite}` | `${entry.current.displayName}` | ${formatValue(entry.current)} | " +
                             "${entry.baseline?.let(::formatValue) ?: "new"} | ${formatDelta(entry)} |"
                     )
                 }
