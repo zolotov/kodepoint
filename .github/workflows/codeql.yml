@@ -66,6 +66,6 @@ jobs:
         ./gradlew clean build --no-daemon --stacktrace -Pkotlin.daemon.jvmargs=-Xmx3g
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@411bbbe57033eedfc1a82d68c01345aa96c737d7 # v4
+      uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
       with:
         category: "/language:${{matrix.language}}"
