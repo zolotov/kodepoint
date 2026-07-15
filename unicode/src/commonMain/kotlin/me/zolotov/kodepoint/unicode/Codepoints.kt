@@ -1,5 +1,6 @@
 package me.zolotov.kodepoint.unicode
 
+import me.zolotov.kodepoint.category.Category
 import me.zolotov.kodepoint.generated.CharacterData
 import me.zolotov.kodepoint.generated.ScriptData
 import me.zolotov.kodepoint.internal.asciiToLowerCase
@@ -34,7 +35,7 @@ object Codepoints {
         (1 shl CharacterData.CAT_ZP)
 
     // Helper functions for property interpretation
-    private fun getCategory(props: Int): Int =
+    private fun getCategoryCode(props: Int): Int =
         (props and CharacterData.CATEGORY_MASK) ushr CharacterData.CATEGORY_SHIFT
 
     private fun getCaseDelta(props: Int): Int {
@@ -89,28 +90,28 @@ object Codepoints {
 
     private fun isLetterSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategory(props)) and LETTER_MASK) != 0
+        return ((1 shl getCategoryCode(props)) and LETTER_MASK) != 0
     }
 
     private fun isDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategory(props) == CharacterData.CAT_ND
+        return getCategoryCode(props) == CharacterData.CAT_ND
     }
 
     private fun isLetterOrDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategory(props)) and LETTER_OR_DIGIT_MASK) != 0
+        return ((1 shl getCategoryCode(props)) and LETTER_OR_DIGIT_MASK) != 0
     }
 
     private fun isUpperCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategory(props) == CharacterData.CAT_LU ||
+        return getCategoryCode(props) == CharacterData.CAT_LU ||
             (props and CharacterData.IS_OTHER_UPPERCASE_BIT) != 0
     }
 
     private fun isLowerCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategory(props) == CharacterData.CAT_LL ||
+        return getCategoryCode(props) == CharacterData.CAT_LL ||
             (props and CharacterData.IS_OTHER_LOWERCASE_BIT) != 0
     }
 
@@ -135,7 +136,7 @@ object Codepoints {
         // Special handling for titlecase letters (Lt) - these map to their uppercase variants
         // U+01C5 Dž -> U+01C4 DŽ, U+01C8 Lj -> U+01C7 LJ
         // U+01CB Nj -> U+01CA NJ, U+01F2 Dz -> U+01F1 DZ
-        if (getCategory(props) == CharacterData.CAT_LT) {
+        if (getCategoryCode(props) == CharacterData.CAT_LT) {
             return when (codepoint) {
                 0x01C5, 0x01C8, 0x01CB, 0x01F2 -> codepoint - 1
                 else -> codepoint
@@ -156,7 +157,7 @@ object Codepoints {
 
     private fun isSpaceCharSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategory(props)) and SPACE_CHAR_MASK) != 0
+        return ((1 shl getCategoryCode(props)) and SPACE_CHAR_MASK) != 0
     }
 
     private fun isWhitespaceSlow(codepoint: Int): Boolean {
@@ -175,7 +176,7 @@ object Codepoints {
         }
         // Also ignorable: Format characters (category Cf)
         val props = CharacterData.getProperties(codepoint)
-        return getCategory(props) == CharacterData.CAT_CF
+        return getCategoryCode(props) == CharacterData.CAT_CF
     }
 
     private fun isUnicodeIdentifierStartSlow(codepoint: Int): Boolean {
@@ -249,4 +250,8 @@ object Codepoints {
 
     fun getUnicodeScript(codepoint: Int): UnicodeScript =
         if (isAscii(codepoint)) getAsciiUnicodeScript(codepoint) else ScriptData.getScript(codepoint)
+
+    fun getCategory(codepoint: Int): Category =
+        // Category.ordinal matches the category codes packed into CharacterData.
+        Category.entries[getCategoryCode(CharacterData.getProperties(codepoint))]
 }
