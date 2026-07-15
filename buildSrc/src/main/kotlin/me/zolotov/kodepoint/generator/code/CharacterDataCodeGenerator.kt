@@ -214,6 +214,11 @@ private fun generateCharacterDataFacade(
             const("IS_JAVA_ID_PART_BIT", "1 shl 23", private = false)
             const("HAS_LARGE_LOWERCASE_DELTA_BIT", "1 shl 24", private = false)
             const("HAS_LARGE_UPPERCASE_DELTA_BIT", "1 shl 25", private = false)
+            const("IS_LETTER_BIT", "1 shl 26", private = false)
+            const("IS_DIGIT_BIT", "1 shl 27", private = false)
+            const("IS_UPPERCASE_BIT", "1 shl 28", private = false)
+            const("IS_LOWERCASE_BIT", "1 shl 29", private = false)
+            const("IS_SPACE_CHAR_BIT", "1 shl 30", private = false)
             emptyLine()
 
             // Category constants
@@ -272,9 +277,14 @@ private fun generateCharacterDataFacade(
             // getProperties function using UNIQUE_PROPERTY_VALUES
             function("getProperties", listOf("cp" to "Int"), "Int") {
                 returnWhen {
+                    // BMP first (including a negativity check via ushr) so the common case
+                    // pays two branches instead of three
+                    branch(
+                        "cp ushr 16 == 0",
+                        "if (cp < 0x100) UNIQUE_PROPERTY_VALUES[CharacterDataLatin1.INDICES_DATA[cp].code]" +
+                            " else UNIQUE_PROPERTY_VALUES[CharacterDataBMP.getPropertyIndex(cp - 0x100)]"
+                    )
                     branch("cp < 0", "0")
-                    branch("cp < 0x100", "UNIQUE_PROPERTY_VALUES[CharacterDataLatin1.INDICES_DATA[cp].code]")
-                    branch("cp <= 0xFFFF", "UNIQUE_PROPERTY_VALUES[CharacterDataBMP.getPropertyIndex(cp - 0x100)]")
                     // Sparse planes return full property values directly
                     branch("cp <= 0x1FFFF", "CharacterDataSMP.getProperties(cp - 0x10000)")
                     branch("cp <= 0x2FFFF", "CharacterDataSIP.getProperties(cp - 0x20000)")
