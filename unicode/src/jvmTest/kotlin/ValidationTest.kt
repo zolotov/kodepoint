@@ -84,6 +84,13 @@ class ValidationTest {
         { Character.UnicodeScript.of(it).name }
     )
 
+    @Test
+    fun getCategory() = doTest(
+        "getCategory",
+        { Codepoints.getCategory(it).code },
+        { CharCategory.valueOf(Character.getType(it)).code }
+    )
+
     private data class Mismatch(
         val codepoint: Int,
         val jvm: Any,
