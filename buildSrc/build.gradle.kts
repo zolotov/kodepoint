@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("com.vanniktech:gradle-maven-publish-plugin:0.37.0")
     implementation("org.jetbrains.dokka:dokka-gradle-plugin:2.2.0")
 }
