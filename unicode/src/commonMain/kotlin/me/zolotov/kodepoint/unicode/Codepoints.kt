@@ -27,13 +27,6 @@ object Codepoints {
     private const val ASCII_JAVA_ID_PART_LO = 0x03FF00100FFFC1FFL // 0-9, $, 0x00..0x08, 0x0E..0x1B
     private const val ASCII_JAVA_ID_PART_HI = -0x7800000178000002L // A-Z, _, a-z, 0x7F
 
-    // Pre-computed masks for efficient multi-category checks
-    private const val LETTER_MASK = (1 shl CharacterData.CAT_LU) or (1 shl CharacterData.CAT_LL) or
-        (1 shl CharacterData.CAT_LT) or (1 shl CharacterData.CAT_LM) or (1 shl CharacterData.CAT_LO)
-    private const val LETTER_OR_DIGIT_MASK = LETTER_MASK or (1 shl CharacterData.CAT_ND)
-    private const val SPACE_CHAR_MASK = (1 shl CharacterData.CAT_ZS) or (1 shl CharacterData.CAT_ZL) or
-        (1 shl CharacterData.CAT_ZP)
-
     // Helper functions for property interpretation
     private fun getCategoryCode(props: Int): Int =
         (props and CharacterData.CATEGORY_MASK) ushr CharacterData.CATEGORY_SHIFT
@@ -90,29 +83,27 @@ object Codepoints {
 
     private fun isLetterSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategoryCode(props)) and LETTER_MASK) != 0
+        return (props and CharacterData.IS_LETTER_BIT) != 0
     }
 
     private fun isDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategoryCode(props) == CharacterData.CAT_ND
+        return (props and CharacterData.IS_DIGIT_BIT) != 0
     }
 
     private fun isLetterOrDigitSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategoryCode(props)) and LETTER_OR_DIGIT_MASK) != 0
+        return (props and (CharacterData.IS_LETTER_BIT or CharacterData.IS_DIGIT_BIT)) != 0
     }
 
     private fun isUpperCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategoryCode(props) == CharacterData.CAT_LU ||
-            (props and CharacterData.IS_OTHER_UPPERCASE_BIT) != 0
+        return (props and CharacterData.IS_UPPERCASE_BIT) != 0
     }
 
     private fun isLowerCaseSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return getCategoryCode(props) == CharacterData.CAT_LL ||
-            (props and CharacterData.IS_OTHER_LOWERCASE_BIT) != 0
+        return (props and CharacterData.IS_LOWERCASE_BIT) != 0
     }
 
     private fun toLowerCaseSlow(codepoint: Int): Int {
@@ -157,7 +148,7 @@ object Codepoints {
 
     private fun isSpaceCharSlow(codepoint: Int): Boolean {
         val props = CharacterData.getProperties(codepoint)
-        return ((1 shl getCategoryCode(props)) and SPACE_CHAR_MASK) != 0
+        return (props and CharacterData.IS_SPACE_CHAR_BIT) != 0
     }
 
     private fun isWhitespaceSlow(codepoint: Int): Boolean {

@@ -17,6 +17,14 @@ package me.zolotov.kodepoint.generator
  * - bit 23:     Is Java identifier part
  * - bit 24:     Has large lowercase delta
  * - bit 25:     Has large uppercase delta
+ * - bit 26:     Is letter (category Lu, Ll, Lt, Lm, Lo)
+ * - bit 27:     Is digit (category Nd)
+ * - bit 28:     Is uppercase (category Lu or Other_Uppercase)
+ * - bit 29:     Is lowercase (category Ll or Other_Lowercase)
+ * - bit 30:     Is space char (category Zs, Zl, Zp)
+ *
+ * Bits 26-30 are derived from the category and other bits; they exist so hot
+ * predicates can test a single bit instead of decoding the category field.
  */
 object PropertyPacker {
     const val CASE_DELTA_MASK = 0x3FF            // bits 0-9 (10 bits)
@@ -32,6 +40,11 @@ object PropertyPacker {
     const val IS_JAVA_ID_PART_BIT = 1 shl 23
     const val HAS_LARGE_LOWERCASE_DELTA_BIT = 1 shl 24
     const val HAS_LARGE_UPPERCASE_DELTA_BIT = 1 shl 25
+    const val IS_LETTER_BIT = 1 shl 26
+    const val IS_DIGIT_BIT = 1 shl 27
+    const val IS_UPPERCASE_BIT = 1 shl 28
+    const val IS_LOWERCASE_BIT = 1 shl 29
+    const val IS_SPACE_CHAR_BIT = 1 shl 30
 
     const val MIN_DELTA = -512
     const val MAX_DELTA = 511
@@ -66,6 +79,16 @@ object PropertyPacker {
         if (data.isIdContinue) props = props or IS_UNICODE_ID_PART_BIT
         if (data.isJavaIdentifierStart) props = props or IS_JAVA_ID_START_BIT
         if (data.isJavaIdentifierPart) props = props or IS_JAVA_ID_PART_BIT
+
+        when (data.category) {
+            GeneralCategory.Lu, GeneralCategory.Ll, GeneralCategory.Lt,
+            GeneralCategory.Lm, GeneralCategory.Lo -> props = props or IS_LETTER_BIT
+            GeneralCategory.Nd -> props = props or IS_DIGIT_BIT
+            GeneralCategory.Zs, GeneralCategory.Zl, GeneralCategory.Zp -> props = props or IS_SPACE_CHAR_BIT
+            else -> {}
+        }
+        if (data.category == GeneralCategory.Lu || data.isOtherUppercase) props = props or IS_UPPERCASE_BIT
+        if (data.category == GeneralCategory.Ll || data.isOtherLowercase) props = props or IS_LOWERCASE_BIT
 
         return props
     }
