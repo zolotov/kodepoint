@@ -148,4 +148,6 @@ JVM includes U+2E2F (VERTICAL TILDA) for backward compatibility, but this charac
 
 ## Benchmarks
 
+Benchmark results, including history and comparisons against `java.lang.Character`, are published to the [dashboard](https://zolotov.github.io/kodepoint).
+
 Benchmark commands, categories, and the Gradle-driven GitHub reporting pipeline live in [`benchmarks/README.md`](benchmarks/README.md).
