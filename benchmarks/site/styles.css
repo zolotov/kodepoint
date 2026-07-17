@@ -158,6 +158,10 @@ dd {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.pr-list {
+    margin-bottom: 16px;
+}
+
 .group-label,
 .empty-state {
     color: var(--muted);

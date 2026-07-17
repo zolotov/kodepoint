@@ -5,6 +5,12 @@
   var SUITE_ORDER = { jvm: 0, wasmJs: 1, 'character-data': 2 };
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
+  // "?pr=<number>" switches the dashboard to a pull-request view: the same layout,
+  // fed from data/prs/<n>/ where history.json holds only that PR's runs.
+  var prParam = new URLSearchParams(window.location.search).get('pr');
+  var activePr = prParam && /^\d+$/.test(prParam) ? prParam : null;
+  var dataBase = activePr ? 'data/prs/' + activePr + '/' : 'data/';
+
   function suiteName(suite) {
     return SUITE_NAMES[suite] || suite;
   }
@@ -36,6 +42,14 @@
 
   function link(href, text) {
     if (!/^https?:\/\//.test(href)) return document.createTextNode(text);
+    var a = document.createElement('a');
+    a.href = href;
+    a.textContent = text;
+    return a;
+  }
+
+  // For our own static hrefs; link() deliberately rejects non-http URLs from data.
+  function relativeLink(href, text) {
     var a = document.createElement('a');
     a.href = href;
     a.textContent = text;
@@ -83,11 +97,12 @@
   }
 
   function loadData() {
-    if (window.BENCHMARK_DATA) return Promise.resolve(window.BENCHMARK_DATA);
+    // data.js only embeds the main-branch payload, so PR views always fetch.
+    if (!activePr && window.BENCHMARK_DATA) return Promise.resolve(window.BENCHMARK_DATA);
     var names = ['latest', 'comparison', 'history'];
     return Promise.all(names.map(function (name) {
-      return fetch('data/' + name + '.json').then(function (response) {
-        if (!response.ok) throw new Error('HTTP ' + response.status + ' for data/' + name + '.json');
+      return fetch(dataBase + name + '.json').then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' for ' + dataBase + name + '.json');
         return response.json();
       });
     })).then(function (parts) {
@@ -131,6 +146,13 @@
     var list = document.getElementById('meta-list');
     var meta = data.latest;
     var baseline = data.comparison.baseline;
+    if (activePr) {
+      document.title += ' — PR #' + activePr;
+      var heading = document.querySelector('.page-header h1');
+      if (heading) heading.textContent += ' — PR #' + activePr;
+      list.appendChild(metaLine('Pull request', '#' + activePr + (meta.refName ? ' (' + meta.refName + ')' : '')));
+      list.appendChild(metaLine('View', relativeLink('./', 'main dashboard')));
+    }
     list.appendChild(metaLine('Generated', meta.generatedAt || 'n/a'));
     if (meta.refName) list.appendChild(metaLine('Ref', meta.refName));
     if (meta.commitSha) {
@@ -148,6 +170,56 @@
         ? ' (±' + formatNumber(data.comparison.significanceThreshold * 100, 1) + '% fallback)'
         : '')));
     list.appendChild(metaLine('History', (data.history.runs || []).length + ' runs'));
+  }
+
+  /* ---------- pull request index ---------- */
+
+  function renderPrIndex() {
+    var container = document.getElementById('pr-list');
+    if (!container || activePr) return;
+    // The index only exists once a PR run has been published; over file:// the
+    // fetch fails and the section simply stays hidden.
+    fetch('data/prs/index.json').then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }).then(function (index) {
+      var prs = (index.prs || []).slice().sort(function (a, b) { return b.number - a.number; });
+      if (prs.length === 0) return;
+
+      var panel = el('section', 'panel');
+      var header = el('div', 'panel-header');
+      header.appendChild(el('h2', null, 'Open Pull Requests'));
+      header.appendChild(el('span', null, prs.length + (prs.length === 1 ? ' PR' : ' PRs')));
+      panel.appendChild(header);
+
+      var wrap = el('div', 'table-wrap');
+      var table = el('table');
+      var thead = el('thead');
+      var headRow = el('tr');
+      ['PR', 'Branch', 'Runs', 'Last run'].forEach(function (label) {
+        headRow.appendChild(el('th', null, label));
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = el('tbody');
+      prs.forEach(function (pr) {
+        var row = el('tr');
+        var prCell = el('td');
+        prCell.appendChild(relativeLink('?pr=' + pr.number, '#' + pr.number));
+        row.appendChild(prCell);
+        var branchCell = el('td');
+        branchCell.appendChild(el('code', null, pr.refName || ''));
+        row.appendChild(branchCell);
+        row.appendChild(el('td', 'numeric', String(pr.runs || 0)));
+        row.appendChild(el('td', 'numeric', shortDate(pr.updatedAt)));
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      panel.appendChild(wrap);
+      container.appendChild(panel);
+      container.hidden = false;
+    }).catch(function () { /* no published PR index */ });
   }
 
   /* ---------- change panels ---------- */
@@ -736,6 +808,8 @@
       });
     });
   }
+
+  renderPrIndex();
 
   loadData().then(function (data) {
     renderMeta(data);

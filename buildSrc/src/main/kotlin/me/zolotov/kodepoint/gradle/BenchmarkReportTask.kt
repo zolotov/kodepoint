@@ -38,6 +38,23 @@ abstract class BenchmarkReportTask : DefaultTask() {
     @get:InputFile
     abstract val historyFile: RegularFileProperty
 
+    /**
+     * Pull request number when this run benchmarks a PR. Enables the per-PR site payload
+     * (`site/data/prs/<n>/`), the accumulated `report/pr-history.json`, and the
+     * "runs in this PR" summary section.
+     */
+    @get:Optional
+    @get:Input
+    abstract val prNumber: Property<String>
+
+    /**
+     * Previously accumulated run history for this PR (fetched from the published site).
+     * The current run is appended to it; [historyFile] stays the comparison baseline.
+     */
+    @get:Optional
+    @get:InputFile
+    abstract val prHistoryFile: RegularFileProperty
+
     @get:Optional
     @get:Input
     abstract val siteUrl: Property<String>
@@ -84,19 +101,28 @@ abstract class BenchmarkReportTask : DefaultTask() {
         characterDataInput.copyTo(characterDataOutput, overwrite = true)
 
         val currentRun = buildCurrentRun(jvmOutput, wasmOutput, characterDataOutput)
-        val existingHistory = readExistingHistory()
+        val existingHistory = readHistory(historyFile)
         val baselineRun = existingHistory.runs.lastOrNull()
         val comparison = compareRuns(currentRun, baselineRun)
         val updatedHistory = mergeHistory(existingHistory, currentRun)
 
+        val prNumberValue = prNumber.orNull?.trim()?.ifEmpty { null }?.also { value ->
+            require(value.all(Char::isDigit)) { "prNumber must be a plain PR number, got '$value'" }
+        }
+        val prHistory = prNumberValue?.let { mergeHistory(readHistory(prHistoryFile), currentRun) }
+
         val currentJson = currentRun.toJson()
         val comparisonJson = comparison.toJson(currentRun, baselineRun)
         val historyJson = updatedHistory.toJson()
-        val summaryMarkdown = renderSummaryMarkdown(currentRun, baselineRun, comparison)
+        val prHistoryJson = prHistory?.toJson()
+        val summaryMarkdown = renderSummaryMarkdown(currentRun, baselineRun, comparison, prNumberValue, prHistory)
 
         reportsDir.resolve("current.json").writeText(json.encodeToString(JsonObject.serializer(), currentJson) + "\n")
         reportsDir.resolve("comparison.json").writeText(json.encodeToString(JsonObject.serializer(), comparisonJson) + "\n")
         reportsDir.resolve("history.json").writeText(json.encodeToString(JsonObject.serializer(), historyJson) + "\n")
+        prHistoryJson?.let {
+            reportsDir.resolve("pr-history.json").writeText(json.encodeToString(JsonObject.serializer(), it) + "\n")
+        }
         reportsDir.resolve("summary.md").writeText(summaryMarkdown)
 
         siteTemplateDirectory.asFile.get().copyRecursively(siteDir, overwrite = true)
@@ -106,6 +132,15 @@ abstract class BenchmarkReportTask : DefaultTask() {
         siteDataDir.resolve("history.json").writeText(json.encodeToString(JsonObject.serializer(), historyJson) + "\n")
         // data.js lets the dashboard work over file:// where fetch() of local JSON is blocked.
         siteDataDir.resolve("data.js").writeText(renderDataJs(currentJson, comparisonJson, historyJson))
+        if (prNumberValue != null && prHistoryJson != null) {
+            // The same three-file contract as data/, so the dashboard can load a PR
+            // view (?pr=<n>) through the identical code path. history.json holds only
+            // this PR's runs; comparison.json still compares against the main baseline.
+            val prDataDir = siteDataDir.resolve("prs/$prNumberValue").apply(File::mkdirs)
+            prDataDir.resolve("latest.json").writeText(json.encodeToString(JsonObject.serializer(), currentJson) + "\n")
+            prDataDir.resolve("comparison.json").writeText(json.encodeToString(JsonObject.serializer(), comparisonJson) + "\n")
+            prDataDir.resolve("history.json").writeText(json.encodeToString(JsonObject.serializer(), prHistoryJson) + "\n")
+        }
         siteDir.resolve(".nojekyll").writeText("\n")
 
         publishGitHubSummary(summaryMarkdown)
@@ -126,8 +161,8 @@ abstract class BenchmarkReportTask : DefaultTask() {
         File(summaryPath).appendText(summaryMarkdown)
     }
 
-    private fun readExistingHistory(): BenchmarkHistory {
-        val candidate = historyFile.orNull?.asFile?.takeIf(File::isFile) ?: return BenchmarkHistory(emptyList())
+    private fun readHistory(property: RegularFileProperty): BenchmarkHistory {
+        val candidate = property.orNull?.asFile?.takeIf(File::isFile) ?: return BenchmarkHistory(emptyList())
         val root = json.parseToJsonElement(candidate.readText()).jsonObject
         if (root["schemaVersion"]?.jsonPrimitive?.intOrNull != HISTORY_SCHEMA_VERSION) {
             error("Unsupported benchmark history schema in ${candidate.path}")
@@ -307,11 +342,21 @@ abstract class BenchmarkReportTask : DefaultTask() {
     private fun renderSummaryMarkdown(
         currentRun: BenchmarkRun,
         baselineRun: BenchmarkRun?,
-        comparison: List<ComparisonEntry>
+        comparison: List<ComparisonEntry>,
+        prNumber: String?,
+        prHistory: BenchmarkHistory?
     ): String {
         val regressions = comparison.topEntries(ChangeType.REGRESSION)
         val improvements = comparison.topEntries(ChangeType.IMPROVEMENT)
-        val siteLink = currentRun.metadata.siteUrl?.let { "- Site: [$it]($it)\n" }.orEmpty()
+        val siteLink = currentRun.metadata.siteUrl?.let { site ->
+            buildString {
+                append("- Site: [$site]($site)\n")
+                if (prNumber != null) {
+                    val prUrl = "${site.trimEnd('/')}/?pr=$prNumber"
+                    append("- PR dashboard: [$prUrl]($prUrl)\n")
+                }
+            }
+        }.orEmpty()
         val baselineLine = baselineRun?.let {
             val baselineRef = listOfNotNull(it.metadata.refName, it.metadata.commitSha?.take(7)).joinToString(" @ ")
             "- Baseline: `${baselineRef.ifBlank { "latest published run" }}`\n"
@@ -339,6 +384,33 @@ abstract class BenchmarkReportTask : DefaultTask() {
             appendLine()
             append(renderChangeTable(improvements, emptyLabel = "No significant improvements relative to the baseline.\n"))
             appendLine()
+
+            if (prHistory != null) {
+                appendLine("## Benchmark Runs in This PR")
+                appendLine()
+                appendLine("| Run | Commit | Regressions | Improvements |")
+                appendLine("| --- | --- | ---: | ---: |")
+                prHistory.runs.forEachIndexed { index, run ->
+                    val date = run.metadata.generatedAt
+                    val runLabel = run.metadata.runUrl?.let { "[$date]($it)" } ?: "`$date`"
+                    val marker = if (index == prHistory.runs.lastIndex) " **(this run)**" else ""
+                    val commit = run.metadata.commitSha?.take(7)?.let { sha ->
+                        run.metadata.commitUrl?.let { "[`$sha`]($it)" } ?: "`$sha`"
+                    } ?: "n/a"
+                    // Every run is compared against the same (current) baseline, so the
+                    // counts are directly comparable across the PR's pushes.
+                    val counts = if (baselineRun != null) {
+                        val runComparison = compareRuns(run, baselineRun)
+                        val runRegressions = runComparison.count { it.change == ChangeType.REGRESSION }
+                        val runImprovements = runComparison.count { it.change == ChangeType.IMPROVEMENT }
+                        "$runRegressions | $runImprovements"
+                    } else {
+                        "n/a | n/a"
+                    }
+                    appendLine("| $runLabel$marker | $commit | $counts |")
+                }
+                appendLine()
+            }
 
             appendLine("## Suite Coverage")
             appendLine()

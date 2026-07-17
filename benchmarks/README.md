@@ -41,7 +41,9 @@ Gradle properties understood by `ciBenchmark`:
 |----------------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `benchmarkHistoryFile`           | none    | Existing `history.json` to use as the comparison baseline and to extend                                                                                                                                                                               |
 | `benchmarkSiteUrl`               | none    | Published Pages URL, embedded into reports and the step summary                                                                                                                                                                                       |
-| `benchmarkHistoryLimit`          | `90`    | Number of runs retained in `history.json`                                                                                                                                                                                                             |
+| `benchmarkPrNumber`              | none    | Pull request number. Enables the per-PR site payload (`site/data/prs/<n>/`), `report/pr-history.json`, and the "Benchmark Runs in This PR" summary section                                                                                            |
+| `benchmarkPrHistoryFile`         | none    | Previously published run history for this PR; the current run is appended to it. `benchmarkHistoryFile` stays the comparison baseline                                                                                                                 |
+| `benchmarkHistoryLimit`          | `90`    | Number of runs retained in `history.json` (and per-PR histories)                                                                                                                                                                                      |
 | `benchmarkSignificanceThreshold` | `0.03`  | Fallback noise threshold for measurements without confidence intervals. When both runs carry JMH 99.9% confidence intervals (the normal case), significance is decided per benchmark by interval overlap instead; size metrics always compare exactly |
 
 ## Benchmark Categories
@@ -67,8 +69,10 @@ benchmarks/build/ci/
 │   ├── current.json     # this run, normalized schema
 │   ├── comparison.json  # per-measurement delta vs the baseline
 │   ├── history.json     # bounded run history (baseline + this run)
+│   ├── pr-history.json  # PR runs only (PR runs; previous PR history + this run)
 │   └── summary.md       # markdown summary (also appended to the GitHub step summary)
 └── site/             # deployable static dashboard (template + data)
+    └── data/prs/<n>/ # per-PR payload (PR runs; same three-file contract as data/)
 ```
 
 CharacterData size metrics are written to `unicode/build/reports/character-data/metrics.json`.
@@ -79,11 +83,13 @@ CharacterData size metrics are written to `unicode/build/reports/character-data/
 
 - install Java, Node, and Gradle
 - download the published `history.json` from the existing Pages site (404 = fresh start;
-  any other failure aborts the run so a transient outage can never wipe the trend data)
+  any other failure aborts the run so a transient outage can never wipe the trend data);
+  for PR runs, additionally download that PR's published run history
 - run `./gradlew :benchmarks:ciBenchmark`
 - upload `benchmarks/build/ci/` as the workflow artifact
 - on pull requests, upsert a sticky PR comment with `report/summary.md`
-- deploy `benchmarks/build/ci/site/` to GitHub Pages on pushes to `main`
+- deploy to GitHub Pages after every `main` push and every non-fork PR run; on PR close,
+  redeploy without that PR's data (see "Pull requests on Pages" below)
 
 The Gradle task owns the rest:
 
@@ -96,14 +102,36 @@ The Gradle task owns the rest:
 ### Pull requests
 
 PR runs compare against the latest run published from `main` and surface the result in
-three places: the sticky PR comment, the workflow step summary, and the
+four places: the sticky PR comment, the workflow step summary, the
 `benchmark-report-*` artifact (which contains the full site — download it and open
-`site/index.html` to browse a PR run interactively). PR results are never merged into
-the published history; only `main` pushes deploy to Pages.
+`site/index.html` to browse a PR run interactively), and the published Pages dashboard
+(`…/?pr=<number>`). PR results are never merged into the main trend history.
+
+Every push to a PR appends a run to that PR's own history, so the sticky comment's
+"Benchmark Runs in This PR" table and the PR dashboard's trend charts cover all of the
+PR's runs, each compared against the same main baseline.
 
 Fork PRs run on `ubuntu-latest` regardless of `BENCHMARK_RUNNER` (untrusted code must
-not execute on a persistent self-hosted machine) and skip the PR comment because the
-fork token is read-only.
+not execute on a persistent self-hosted machine), skip the PR comment because the
+fork token is read-only, and never publish to Pages (no OIDC token for fork events).
+
+### Pull requests on Pages
+
+The dashboard's main view lists active PRs (from `data/prs/index.json`); `?pr=<n>`
+renders the standard dashboard from `data/prs/<n>/{latest,comparison,history}.json`,
+where `history.json` holds only that PR's runs.
+
+`actions/deploy-pages` always replaces the entire site, so every deploy first runs
+`benchmarks/scripts/merge-pages-data.sh`, which carries forward whatever the run did
+not produce itself: PR deploys fetch the live main-branch data, main deploys fetch all
+live PR data, and both preserve the other PRs. Deploys are serialized through the
+`benchmark-pages-deploy` concurrency group. Any fetch failure other than HTTP 404
+aborts the deploy rather than silently dropping published data. (GitHub keeps at most
+one pending job per concurrency group, so under heavy parallel PR traffic a PR's deploy
+can occasionally be superseded; its data reappears with that PR's next run.)
+
+When a PR closes, a cleanup job assembles the site from the template plus live data
+minus the closed PR and redeploys, so `data/prs/` only ever holds open PRs.
 
 ### One-time repository setup
 
@@ -127,6 +155,9 @@ fork token is read-only.
 - Machine-readable JSON next to it: `…/data/latest.json`, `…/data/comparison.json`,
   `…/data/history.json` (schema version 1; `history.json` is also the seed the next
   run consumes, so it is the canonical trend store).
+- Active PRs: listed on the main dashboard; each links to `…/?pr=<number>` backed by
+  `…/data/prs/<number>/{latest,comparison,history}.json` and indexed in
+  `…/data/prs/index.json`.
 - Per-run: workflow step summary and the uploaded `benchmark-report-*` artifact.
 
 ## Self-hosted benchmark runner on Google Compute Engine

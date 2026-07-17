@@ -109,4 +109,11 @@ tasks.register<BenchmarkReportTask>("ciBenchmark") {
             .takeIf { it.isFile }
             ?.let(historyFile::set)
     }
+
+    prNumber.convention(providers.gradleProperty("benchmarkPrNumber"))
+    providers.gradleProperty("benchmarkPrHistoryFile").orNull?.let { historyPath ->
+        rootProject.file(historyPath)
+            .takeIf { it.isFile }
+            ?.let(prHistoryFile::set)
+    }
 }
