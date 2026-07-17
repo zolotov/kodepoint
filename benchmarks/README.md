@@ -136,6 +136,18 @@ minus the closed PR and redeploys, so `data/prs/` only ever holds open PRs.
 ### One-time repository setup
 
 1. Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+2. Settings → Environments → `github-pages` → Deployment branches and tags:
+   **No restriction**. PR-triggered deploys present the merge ref
+   (`refs/pull/<n>/merge`), which deployment branch policies can never match (they
+   only apply to real branches — patterns like `pull/*/merge` were tried and are
+   rejected at deploy time), so the default main-only policy blocks PR deploys.
+   Equivalent CLI:
+   ```bash
+   gh api -X PUT repos/{owner}/{repo}/environments/github-pages \
+     --input - <<< '{"deployment_branch_policy": null}'
+   ```
+   This is safe here: only the benchmarks workflow requests `pages: write`, and fork
+   PRs never reach the deploy job nor get an OIDC token.
 2. Optional repository variables (Settings → Secrets and variables → Actions → Variables):
    - `BENCHMARK_RUNNER` — label of a self-hosted runner for stable numbers
      (see below). Falls back to `ubuntu-latest`.
