@@ -342,3 +342,5 @@ gcloud compute instances set-service-account "$INSTANCE" --zone="$ZONE" \
   --no-service-account --no-scopes
 gcloud compute instances start "$INSTANCE" --zone="$ZONE"
 ```
+
+<!-- smoke test: PR Pages deploy; safe to delete -->
