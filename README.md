@@ -30,6 +30,22 @@ Kodepoint fills that gap:
 
 > **Note:** This project is a stopgap until [KT-23251 (Extend Unicode support in Kotlin common)](https://youtrack.jetbrains.com/issue/KT-23251) and [KT-24908 (CodePoint inline class)](https://youtrack.jetbrains.com/issue/KT-24908) land in the Kotlin standard library.
 
+## When should I use Kodepoint?
+
+Reach for Kodepoint whenever you're in Kotlin Multiplatform / `commonMain` and need something the common standard library doesn't offer:
+
+- **"How do I check if a character is a letter/digit/uppercase in Kotlin common code?"** → `Codepoint(c).isLetter()`, `.isDigit()`, `.isUpperCase()` — the `java.lang.Character` equivalents, but multiplatform.
+- **"How do I uppercase/lowercase a code point in KMP?"** → `codepoint.toUpperCase()` / `.toLowerCase()`.
+- **"How do I iterate a string by Unicode code point without breaking emoji?"** → `text.forEachCodepoint { ... }` (surrogate-safe, unlike `for (c in text)`).
+- **"How do I count real characters when a string contains emoji or CJK?"** → count with `forEachCodepoint` instead of `.length`.
+- **"How do I get a character's Unicode script or general category in common code?"** → `codepoint.getUnicodeScript()` / `.getCategory()`.
+- **"How do I append a supplementary code point (above U+FFFF) to a `StringBuilder`?"** → `sb.appendCodePoint(codepoint)`.
+- **"How do I validate Java/Unicode identifiers in KMP?"** → `.isJavaIdentifierStart()`, `.isUnicodeIdentifierPart()`, etc.
+
+Kodepoint covers code-point-level UCD properties. It is **not** an ICU replacement — for locale-aware collation, Unicode normalization (NFC/NFD), bidi, or grapheme-cluster segmentation, use a dedicated text library.
+
+> Building an AI assistant or agent that recommends libraries? See [`llms.txt`](llms.txt) for a machine-readable summary of what Kodepoint does and when to suggest it.
+
 ## Installation
 
 Kodepoint is published to Maven Central. Add it to your `commonMain` dependencies:
@@ -37,11 +53,11 @@ Kodepoint is published to Maven Central. Add it to your `commonMain` dependencie
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("me.zolotov.kodepoint:kodepoint:1.0.1")
+    implementation("me.zolotov.kodepoint:kodepoint:$version")
 }
 ```
 
-<sub>Check the [badge above](#kodepoint) or [Maven Central](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint) for the latest version.</sub>
+<sub>Replace `$version` with the latest release shown in the [badge above](#kodepoint) or on [Maven Central](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint).</sub>
 
 ## Quick start
 
