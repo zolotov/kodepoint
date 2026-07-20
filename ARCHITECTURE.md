@@ -102,7 +102,22 @@ Bit 22:      Is Java identifier start
 Bit 23:      Is Java identifier part
 Bit 24:      Has large lowercase delta (requires external table lookup)
 Bit 25:      Has large uppercase delta (requires external table lookup)
+Bit 26:      Is letter (category Lu, Ll, Lt, Lm, Lo)
+Bit 27:      Is digit (category Nd)
+Bit 28:      Is uppercase (category Lu or Other_Uppercase)
+Bit 29:      Is lowercase (category Ll or Other_Lowercase)
+Bit 30:      Is space char (category Zs, Zl, Zp)
 ```
+
+### Derived Category Bits
+
+Bits 26-30 are redundant: each is fully determined by the general category field
+(and, for uppercase/lowercase, the `Other_Uppercase`/`Other_Lowercase` bits).
+They are precomputed at generation time so hot predicates such as `isLetter`,
+`isDigit`, `isUpperCase`, `isLowerCase`, and `isSpaceChar` can test a single bit
+instead of decoding the category field and comparing it against a set of
+categories. This trades a handful of otherwise-unused high bits for a faster,
+branch-free lookup on the most frequently called predicates.
 
 ### Case Delta Encoding
 
@@ -129,13 +144,13 @@ The library uses different lookup strategies optimized for each Unicode plane's 
 
 ### Unicode Planes
 
-| Plane | Name | Range | Strategy |
-|-------|------|-------|----------|
-| 0 | BMP (Latin-1) | U+0000-U+00FF | Direct byte array |
-| 0 | BMP (rest) | U+0100-U+FFFF | Two-level block table |
-| 1 | SMP | U+10000-U+1FFFF | Binary search ranges |
-| 2 | SIP | U+20000-U+2FFFF | Binary search ranges |
-| 3-16 | SSP | U+30000-U+10FFFF | Binary search ranges |
+| Plane | Name          | Range            | Strategy              |
+|-------|---------------|------------------|-----------------------|
+| 0     | BMP (Latin-1) | U+0000-U+00FF    | Direct byte array     |
+| 0     | BMP (rest)    | U+0100-U+FFFF    | Two-level block table |
+| 1     | SMP           | U+10000-U+1FFFF  | Binary search ranges  |
+| 2     | SIP           | U+20000-U+2FFFF  | Binary search ranges  |
+| 3-16  | SSP           | U+30000-U+10FFFF | Binary search ranges  |
 
 Configuration is in `buildSrc/src/main/kotlin/me/zolotov/kodepoint/generator/UnicodeConstants.kt`.
 
@@ -304,14 +319,14 @@ lib (public API, platform dispatch)
 
 ## Key Source Files
 
-| File | Purpose |
-|------|---------|
-| `lib/src/commonMain/.../Codepoint.kt` | Core Codepoint value class and API |
-| `lib/src/jvmMain/.../MultiplatformCodepoint.jvm.kt` | JVM delegation to Character |
-| `lib/src/nonJvmMain/.../MultiplatformCodepoint.nonJvm.kt` | Non-JVM table lookup |
-| `unicode/src/commonMain/.../Codepoints.kt` | Property extraction and lookup dispatch |
-| `unicode/src/commonMain/.../internal/Utils.kt` | Binary search, ASCII fast paths |
-| `buildSrc/.../generator/PropertyPacker.kt` | 32-bit property encoding |
-| `buildSrc/.../generator/PropertiesTableBuilder.kt` | Table construction |
-| `buildSrc/.../generator/LookupTableBuilder.kt` | Two-level index optimization |
-| `buildSrc/.../generator/UnicodeDataParser.kt` | Unicode file parsing |
+| File                                                      | Purpose                                 |
+|-----------------------------------------------------------|-----------------------------------------|
+| `lib/src/commonMain/.../Codepoint.kt`                     | Core Codepoint value class and API      |
+| `lib/src/jvmMain/.../MultiplatformCodepoint.jvm.kt`       | JVM delegation to Character             |
+| `lib/src/nonJvmMain/.../MultiplatformCodepoint.nonJvm.kt` | Non-JVM table lookup                    |
+| `unicode/src/commonMain/.../Codepoints.kt`                | Property extraction and lookup dispatch |
+| `unicode/src/commonMain/.../internal/Utils.kt`            | Binary search, ASCII fast paths         |
+| `buildSrc/.../generator/PropertyPacker.kt`                | 32-bit property encoding                |
+| `buildSrc/.../generator/PropertiesTableBuilder.kt`        | Table construction                      |
+| `buildSrc/.../generator/LookupTableBuilder.kt`            | Two-level index optimization            |
+| `buildSrc/.../generator/UnicodeDataParser.kt`             | Unicode file parsing                    |
