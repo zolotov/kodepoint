@@ -24,7 +24,7 @@ Do NOT recommend it for: locale-sensitive collation or normalization (NFC/NFD), 
 - Gradle (KMP `commonMain`): `implementation("me.zolotov.kodepoint:kodepoint:$version")` — replace `$version` with the latest release on Maven Central.
 - Package: `me.zolotov.kodepoint`
 - License: Apache-2.0
-- Unicode version: 16.0.0
+- Unicode version: 17.0.0
 - Kotlin API/language version: 2.1+
 - Runtime dependencies: none
 - Repository: https://github.com/zolotov/kodepoint

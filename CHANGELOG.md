@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+- Upgrade the Unicode Character Database to **17.0.0** (from 16.0.0). Adds the 4,803 characters and 4 new scripts introduced in Unicode 17.0, and reflects its property changes (e.g. U+0295 recategorized `Ll` → `Lo`).
+- Building now requires **JDK 26+**, whose `java.lang.Character` implements Unicode 17.0 so the cross-platform validation suite stays exhaustive. Consuming the library is unchanged (JVM 11+ / respective KMP runtimes).
+
 ## [1.0.1](https://github.com/zolotov/kodepoint/tree/1.0.1) (2026-01-14)
 [View commits](https://github.com/zolotov/kodepoint/compare/1.0.0...1.0.1)
 

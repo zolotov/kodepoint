@@ -201,11 +201,14 @@ Iteration and lookup are total — they never throw on malformed UTF-16. An **un
 
 | | |
 |--|--|
-| **Unicode version** | 16.0.0 |
+| **Unicode version** | 17.0.0 |
 | **Kotlin API/language version** | 2.1+ |
 | **JVM bytecode target** | 11 |
 | **Correctness** | Non-JVM output validated against `java.lang.Character` for all 1,114,112 code points |
 | **Runtime dependencies** | None |
+| **Build JDK** | 26+ (Unicode 17.0 support; used to build and to validate non-JVM tables against `java.lang.Character`) |
+
+> Consuming the library needs only JVM 11+ (or the relevant Kotlin/Native, JS, or Wasm runtime) — JDK 26 is a **build-time** requirement, because the validation suite compares the generated tables against a `java.lang.Character` that implements Unicode 17.0 (first available in JDK 26).
 
 ## Supported targets
 
@@ -280,12 +283,17 @@ Benchmark results — including history and comparisons against `java.lang.Chara
 
 ## Building
 
+Requires **JDK 26+** (for Unicode 17.0 parity in the validation suite). The Unicode lookup tables are generated at build time from the [Unicode Character Database](https://www.unicode.org/Public/17.0.0/ucd/) — no data files are committed.
+
 ```bash
 # Build all modules
 ./gradlew build
 
-# Run tests
+# Run tests (validates non-JVM tables against java.lang.Character)
 ./gradlew allTests
+
+# Regenerate the Unicode tables (e.g. after bumping UNICODE_VERSION)
+./gradlew :unicode:generateUnicodeData :common:generateUnicodeScript
 ```
 
 ## Contributing

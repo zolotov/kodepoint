@@ -17,7 +17,7 @@ allOpen {
 }
 
 kotlin {
-    jvmToolchain(24)
+    jvmToolchain(26)
     applyDefaultHierarchyTemplate()
     jvm()
     
