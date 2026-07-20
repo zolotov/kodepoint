@@ -5,7 +5,7 @@ plugins {
 
 group = "me.zolotov.kodepoint"
 description = """
-    A Kotlin multiplatform library providing limited Unicode Character Database functionality.
+    Lightweight Unicode code-point APIs for Kotlin Multiplatform strings: code-point-safe iteration and indexing, character classification, case conversion, and Unicode script/category lookup across JVM, Android, Apple, JS, Wasm, and native targets — without depending on ICU.
 """.trimIndent()
 
 subprojects {

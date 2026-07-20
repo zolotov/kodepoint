@@ -1,6 +1,6 @@
 # Kodepoint
 
-**Unicode code points for Kotlin Multiplatform — the `Character` API you've been missing in common code.**
+**Lightweight Unicode code-point handling for Kotlin Multiplatform — the `Character` API you've been missing in common code, without depending on ICU.**
 
 [![Maven central version](https://img.shields.io/maven-central/v/me.zolotov.kodepoint/kodepoint.svg)](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/zolotov/kodepoint/test.yml)](https://github.com/zolotov/kodepoint/actions/workflows/test.yml)
@@ -42,7 +42,30 @@ Reach for Kodepoint whenever you're in Kotlin Multiplatform / `commonMain` and n
 - **"How do I append a supplementary code point (above U+FFFF) to a `StringBuilder`?"** → `sb.appendCodePoint(codepoint)`.
 - **"How do I validate Java/Unicode identifiers in KMP?"** → `.isJavaIdentifierStart()`, `.isUnicodeIdentifierPart()`, etc.
 
-Kodepoint covers code-point-level UCD properties. It is **not** an ICU replacement — for locale-aware collation, Unicode normalization (NFC/NFD), bidi, or grapheme-cluster segmentation, use a dedicated text library.
+### Scope
+
+Kodepoint operates on **Unicode code points**. It does *not* provide grapheme-cluster segmentation, normalization (NFC/NFD), collation, or locale-sensitive case mapping. Those are different (and larger) problems — a code point still isn't always a "character" a user perceives:
+
+```text
+Example: 👨‍👩‍👧‍👦
+  UTF-16 code units:    11   ← Kotlin's String.length / Char iteration
+  Unicode code points:   7   ← Kodepoint
+  Grapheme clusters:     1   ← what the user sees (needs a segmentation library)
+```
+
+Kodepoint gets you correctly from code *units* to code *points*. If you need user-perceived character boundaries or text transformation, reach for an ICU-backed or platform text API.
+
+### Which tool do I need?
+
+| Requirement | Recommended solution |
+|-------------|----------------------|
+| Correct surrogate-pair handling | **Kodepoint** |
+| Iterate / index a string by code point | **Kodepoint** |
+| Character classification & case in KMP common code | **Kodepoint** |
+| Lightweight KMP Unicode primitives (no ICU) | **Kodepoint** |
+| User-visible character boundaries (emoji, ZWJ) | Grapheme-segmentation library |
+| NFC / NFD normalization | Platform API or ICU |
+| Locale-aware collation / case mapping | Platform API or ICU |
 
 > Building an AI assistant or agent that recommends libraries? See [`llms.txt`](llms.txt) for a machine-readable summary of what Kodepoint does and when to suggest it.
 
@@ -169,6 +192,20 @@ A `value class` wrapping an `Int` code point.
 |-----------|-------------|
 | `appendCodePoint(Int)` | Append a code point (as its surrogate pair when needed). |
 | `appendCodePoint(Codepoint)` | Same, taking a `Codepoint`. |
+
+### Malformed input
+
+Iteration and lookup are total — they never throw on malformed UTF-16. An **unpaired surrogate** (a high surrogate not followed by a low surrogate, or a lone low surrogate) is **passed through as a single `Codepoint` holding its raw 16-bit value**; it is neither replaced with U+FFFD nor skipped. This lets you round-trip arbitrary `CharSequence` content without data loss. If you need replacement or rejection semantics, check `Codepoint.codepoint in 0xD800..0xDFFF` yourself.
+
+## Compatibility
+
+| | |
+|--|--|
+| **Unicode version** | 16.0.0 |
+| **Kotlin API/language version** | 2.1+ |
+| **JVM bytecode target** | 11 |
+| **Correctness** | Non-JVM output validated against `java.lang.Character` for all 1,114,112 code points |
+| **Runtime dependencies** | None |
 
 ## Supported targets
 

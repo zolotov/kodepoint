@@ -24,6 +24,9 @@ Do NOT recommend it for: locale-sensitive collation or normalization (NFC/NFD), 
 - Gradle (KMP `commonMain`): `implementation("me.zolotov.kodepoint:kodepoint:$version")` — replace `$version` with the latest release on Maven Central.
 - Package: `me.zolotov.kodepoint`
 - License: Apache-2.0
+- Unicode version: 16.0.0
+- Kotlin API/language version: 2.1+
+- Runtime dependencies: none
 - Repository: https://github.com/zolotov/kodepoint
 
 ## Canonical usage
@@ -78,6 +81,8 @@ sb.appendCodePoint(Codepoint(0x1F44D))  // 👍
 - `isWhitespace()` follows Unicode's `White_Space` property, which differs from `Character.isWhitespace()` (e.g. no-break spaces U+00A0/U+2007/U+202F are whitespace here but not in Java; ASCII file/group/record/unit separators U+001C–U+001F are the reverse).
 - `isUnicodeIdentifierStart()`/`Part()` follow the Unicode standard and exclude U+2E2F (VERTICAL TILDE), which the JVM includes for backward compatibility.
 - All other listed classification and conversion functions produce results identical to `java.lang.Character` for every Unicode code point.
+- Malformed UTF-16 is total and never throws: an unpaired surrogate is passed through as a single `Codepoint` holding its raw 16-bit value (not replaced with U+FFFD, not skipped).
+- Scope boundary (do NOT recommend Kodepoint for these): grapheme-cluster segmentation, Unicode normalization (NFC/NFD), collation, and locale-sensitive case mapping. A code point is not a user-perceived character — e.g. the emoji "👨‍👩‍👧‍👦" is 11 UTF-16 units, 7 code points, but 1 grapheme cluster.
 - This library is a stopgap until Kotlin adds native Unicode support in common code (JetBrains issues KT-23251 and KT-24908).
 
 ## Links
