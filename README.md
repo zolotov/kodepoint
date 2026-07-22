@@ -1,6 +1,6 @@
 # Kodepoint
 
-**Unicode code points for Kotlin Multiplatform – the `Character` API you've been missing in common code.**
+**Lightweight Unicode code-point handling for Kotlin Multiplatform – the `Character` API you've been missing in common code, without depending on ICU.**
 
 [![Maven central version](https://img.shields.io/maven-central/v/me.zolotov.kodepoint/kodepoint.svg)](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/zolotov/kodepoint/test.yml)](https://github.com/zolotov/kodepoint/actions/workflows/test.yml)
@@ -167,6 +167,16 @@ A `value class` wrapping an `Int` code point.
 |------------------------------|----------------------------------------------------------|
 | `appendCodePoint(Int)`       | Append a code point (as its surrogate pair when needed). |
 | `appendCodePoint(Codepoint)` | Same, taking a `Codepoint`.                              |
+
+## Compatibility
+
+|                                 |                                                                                      |
+|---------------------------------|--------------------------------------------------------------------------------------|
+| **Unicode version**             | 16.0.0                                                                               |
+| **Kotlin API/language version** | 2.1+                                                                                 |
+| **JVM bytecode target**         | 11                                                                                   |
+| **Correctness**                 | Non-JVM output validated against `java.lang.Character` for all 1,114,112 code points |
+| **Runtime dependencies**        | None                                                                                 |
 
 ## Supported targets
 
