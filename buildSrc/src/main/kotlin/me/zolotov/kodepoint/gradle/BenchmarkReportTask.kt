@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.gradle
+package me.zolotov.kodepointhello.gradlehello
 
 import kotlinx.serialization.json.*
 import org.gradle.api.DefaultTask
@@ -592,7 +592,7 @@ abstract class BenchmarkReportTask : DefaultTask() {
         this[name]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: error("Missing boolean '$name'")
 
     private companion object {
-        private const val BENCHMARK_PACKAGE_PREFIX = "me.zolotov.kodepoint.benchmark."
+        private const val BENCHMARK_PACKAGE_PREFIX = "me.zolotov.kodepointhello.benchmarkhello."
         private const val HISTORY_SCHEMA_VERSION = 1
 
         /** Suites whose values are exact byte counts, where any change is real. */

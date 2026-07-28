@@ -1,6 +1,6 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
-import me.zolotov.kodepoint.script.UnicodeScript
+import me.zolotov.kodepointhello.scripthello.UnicodeScript
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

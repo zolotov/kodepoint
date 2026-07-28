@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.benchmark
+package me.zolotov.kodepointhello.benchmarkhello
 
 import kotlinx.benchmark.Benchmark
 import kotlinx.benchmark.BenchmarkMode
@@ -9,10 +9,10 @@ import kotlinx.benchmark.OutputTimeUnit
 import kotlinx.benchmark.Scope
 import kotlinx.benchmark.Setup
 import kotlinx.benchmark.State
-import me.zolotov.kodepoint.Codepoint
-import me.zolotov.kodepoint.Direction
-import me.zolotov.kodepoint.appendCodePoint
-import me.zolotov.kodepoint.codepoints
+import me.zolotov.kodepointhello.Codepoint
+import me.zolotov.kodepointhello.Direction
+import me.zolotov.kodepointhello.appendCodePoint
+import me.zolotov.kodepointhello.codepoints
 
 @Suppress("unused")
 @State(Scope.Benchmark)

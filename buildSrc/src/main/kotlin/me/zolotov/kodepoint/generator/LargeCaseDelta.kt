@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
 data class LastCaseDeltaRanges(
     val toLower: List<RangeValue>,

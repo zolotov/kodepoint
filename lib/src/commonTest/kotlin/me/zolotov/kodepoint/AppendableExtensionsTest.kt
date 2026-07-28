@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

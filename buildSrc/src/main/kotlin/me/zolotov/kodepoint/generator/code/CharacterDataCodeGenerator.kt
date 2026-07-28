@@ -1,10 +1,10 @@
-package me.zolotov.kodepoint.generator.code
+package me.zolotov.kodepointhello.generatorhello.codehello
 
-import me.zolotov.kodepoint.generator.LastCaseDeltaRanges
-import me.zolotov.kodepoint.generator.PlaneTableResult
-import me.zolotov.kodepoint.generator.PropertyTableBuildResult
-import me.zolotov.kodepoint.generator.UNICODE_VERSION
-import me.zolotov.kodepoint.generator.dsl.kotlinFile
+import me.zolotov.kodepointhello.generatorhello.LastCaseDeltaRanges
+import me.zolotov.kodepointhello.generatorhello.PlaneTableResult
+import me.zolotov.kodepointhello.generatorhello.PropertyTableBuildResult
+import me.zolotov.kodepointhello.generatorhello.UNICODE_VERSION
+import me.zolotov.kodepointhello.generatorhello.dslhello.kotlinFile
 import java.io.Writer
 import java.nio.file.Path
 import kotlin.io.path.bufferedWriter
@@ -74,7 +74,7 @@ private fun generateLatin1CharacterData(
 ) {
     require(indices.size == 256) { "Latin1 requires exactly 256 index values" }
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
         kdoc {
             line("Auto-generated Unicode character property data for Latin-1 (0x00-0xFF).")
             line("Unicode version: $unicodeVersion")
@@ -107,7 +107,7 @@ private fun generatePlaneCharacterData(
     val indexTable = result.indexTable
     val propertyIndices = result.dataTable
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
         kdoc {
             line("Auto-generated Unicode character property data for ${plane.name}.")
             line("Unicode version: $unicodeVersion")
@@ -147,8 +147,8 @@ private fun generateSparseCharacterData(
     val plane = planeResult.plane
     val ranges = planeResult.ranges
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
-        import("me.zolotov.kodepoint.internal.binarySearchRange")
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
+        import("me.zolotov.kodepointhello.internalhello.binarySearchRange")
 
         kdoc {
             line("Auto-generated Unicode character property data for ${plane.name}.")
@@ -190,7 +190,7 @@ private fun generateCharacterDataFacade(
     val toLowercaseRanges = largeCaseDeltaRanges.toLower
     val toUppercaseRanges = largeCaseDeltaRanges.toUpper
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
         kdoc {
             line("Auto-generated Unicode character property data facade.")
             line("Unicode version: $unicodeVersion")

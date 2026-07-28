@@ -1,7 +1,7 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
-import me.zolotov.kodepoint.generator.code.generateCharacterDataClasses
-import me.zolotov.kodepoint.generator.code.generateScriptDataClasses
+import me.zolotov.kodepointhello.generatorhello.codehello.generateCharacterDataClasses
+import me.zolotov.kodepointhello.generatorhello.codehello.generateScriptDataClasses
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories

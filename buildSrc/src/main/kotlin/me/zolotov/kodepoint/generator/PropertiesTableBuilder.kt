@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
 /**
  * Builds property tables for all Unicode planes using byte indices for memory efficiency.

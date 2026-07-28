@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.category
+package me.zolotov.kodepointhello.categoryhello
 
 /**
  * Unicode general category of a code point, as defined by the Unicode standard.

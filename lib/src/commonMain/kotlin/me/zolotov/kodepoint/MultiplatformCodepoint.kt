@@ -1,7 +1,7 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
-import me.zolotov.kodepoint.category.Category
-import me.zolotov.kodepoint.script.UnicodeScript
+import me.zolotov.kodepointhello.categoryhello.Category
+import me.zolotov.kodepointhello.scripthello.UnicodeScript
 
 internal const val MIN_SUPPLEMENTARY_CODE_POINT = 0x10000
 

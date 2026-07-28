@@ -1,8 +1,8 @@
-package me.zolotov.kodepoint.benchmark
+package me.zolotov.kodepointhello.benchmarkhello
 
 import kotlinx.benchmark.*
-import me.zolotov.kodepoint.Codepoint
-import me.zolotov.kodepoint.unicode.Codepoints
+import me.zolotov.kodepointhello.Codepoint
+import me.zolotov.kodepointhello.unicodehello.Codepoints
 import org.openjdk.jmh.annotations.Level
 
 @Suppress("unused")

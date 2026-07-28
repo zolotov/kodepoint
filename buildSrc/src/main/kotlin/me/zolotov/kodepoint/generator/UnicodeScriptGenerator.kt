@@ -1,6 +1,6 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
-import me.zolotov.kodepoint.generator.dsl.kotlinFile
+import me.zolotov.kodepointhello.generatorhello.dslhello.kotlinFile
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -24,7 +24,7 @@ fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: St
     val scriptNames = extractScriptNamesInCodepointOrder(scripts)
     println("Found ${scriptNames.size} unique scripts")
 
-    val generator = kotlinFile("me.zolotov.kodepoint.script") {
+    val generator = kotlinFile("me.zolotov.kodepointhello.scripthello") {
         kdoc {
             line("Unicode Script values.")
             emptyLine()

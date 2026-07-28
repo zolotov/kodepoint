@@ -1,9 +1,9 @@
-package me.zolotov.kodepoint.generator.code
+package me.zolotov.kodepointhello.generatorhello.codehello
 
-import me.zolotov.kodepoint.generator.ScriptBuildResult
-import me.zolotov.kodepoint.generator.ScriptPlaneResult
-import me.zolotov.kodepoint.generator.UNICODE_VERSION
-import me.zolotov.kodepoint.generator.dsl.kotlinFile
+import me.zolotov.kodepointhello.generatorhello.ScriptBuildResult
+import me.zolotov.kodepointhello.generatorhello.ScriptPlaneResult
+import me.zolotov.kodepointhello.generatorhello.UNICODE_VERSION
+import me.zolotov.kodepointhello.generatorhello.dslhello.kotlinFile
 import java.io.Writer
 import java.nio.file.Path
 import kotlin.io.path.bufferedWriter
@@ -67,7 +67,7 @@ private fun generateLatin1ScriptData(
 ) {
     require(scriptIds.size == 256) { "Latin1 requires exactly 256 script IDs" }
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
         kdoc {
             line("Auto-generated Unicode script data for Latin-1 (0x00-0xFF).")
             line("Unicode version: $unicodeVersion")
@@ -107,7 +107,7 @@ private fun generatePlaneScriptData(
     val indexTable = result.indexTable
     val scriptTable = result.dataTable
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
         kdoc {
             line("Auto-generated Unicode script data for ${plane.name}.")
             line("Unicode version: $unicodeVersion")
@@ -148,8 +148,8 @@ private fun generateSparseScriptData(
     val ranges = scriptPlaneResult.ranges
     val className = "ScriptData${plane.name}"
 
-    kotlinFile("me.zolotov.kodepoint.generated") {
-        import("me.zolotov.kodepoint.internal.binarySearchRange")
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
+        import("me.zolotov.kodepointhello.internalhello.binarySearchRange")
 
         kdoc {
             line("Auto-generated Unicode script data for ${plane.name}.")
@@ -186,8 +186,8 @@ private fun generateScriptDataFacade(
     unicodeVersion: String,
     additionalComment: String
 ) {
-    kotlinFile("me.zolotov.kodepoint.generated") {
-        import("me.zolotov.kodepoint.script.UnicodeScript")
+    kotlinFile("me.zolotov.kodepointhello.generatedhello") {
+        import("me.zolotov.kodepointhello.scripthello.UnicodeScript")
 
         kdoc {
             line("Auto-generated Unicode script data facade.")

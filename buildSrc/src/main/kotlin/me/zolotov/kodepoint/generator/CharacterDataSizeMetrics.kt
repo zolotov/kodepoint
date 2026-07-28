@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
 import java.nio.file.Path
 import kotlin.io.path.createDirectories

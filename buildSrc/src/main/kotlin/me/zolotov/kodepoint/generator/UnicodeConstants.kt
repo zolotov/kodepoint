@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.generator
+package me.zolotov.kodepointhello.generatorhello
 
 const val UNICODE_VERSION = "16.0.0"
 const val UNICODE_BASE_URL = "https://www.unicode.org/Public/$UNICODE_VERSION/ucd/"

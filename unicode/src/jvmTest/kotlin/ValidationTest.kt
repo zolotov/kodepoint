@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.unicode
+package me.zolotov.kodepointhello.unicodehello
 
 import kotlin.test.Test
 import kotlin.test.fail

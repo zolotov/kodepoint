@@ -1,7 +1,7 @@
-package me.zolotov.kodepoint.benchmark
+package me.zolotov.kodepointhello.benchmarkhello
 
 import kotlinx.benchmark.*
-import me.zolotov.kodepoint.unicode.Codepoints
+import me.zolotov.kodepointhello.unicodehello.Codepoints
 
 @Suppress("unused")
 @State(Scope.Benchmark)

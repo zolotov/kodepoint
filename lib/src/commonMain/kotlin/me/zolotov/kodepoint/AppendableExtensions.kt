@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
 fun <T : Appendable> T.appendCodePoint(codepoint: Int): T {
   if (codepoint ushr 16 == 0) {

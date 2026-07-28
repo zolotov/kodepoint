@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.internal
+package me.zolotov.kodepointhello.internalhello
 
 /**
  * Binary search over a sorted array of ranges stored as triplets.

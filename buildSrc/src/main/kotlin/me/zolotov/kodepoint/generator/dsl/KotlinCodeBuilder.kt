@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint.generator.dsl
+package me.zolotov.kodepointhello.generatorhello.dslhello
 
 import java.io.Writer
 

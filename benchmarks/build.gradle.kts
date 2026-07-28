@@ -1,5 +1,5 @@
 import kotlinx.benchmark.gradle.JvmBenchmarkTarget
-import me.zolotov.kodepoint.gradle.BenchmarkReportTask
+import me.zolotov.kodepointhello.gradlehello.BenchmarkReportTask
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {

@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
 import kotlin.jvm.JvmInline
 
@@ -124,5 +124,5 @@ value class Codepoint(val codepoint: Int) {
     }
 }
 
-typealias UnicodeScript = me.zolotov.kodepoint.script.UnicodeScript
-typealias Category = me.zolotov.kodepoint.category.Category
+typealias UnicodeScript = me.zolotov.kodepointhello.scripthello.UnicodeScript
+typealias Category = me.zolotov.kodepointhello.categoryhello.Category

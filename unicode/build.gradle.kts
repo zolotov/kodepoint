@@ -1,4 +1,4 @@
-import me.zolotov.kodepoint.generator.generateUnicodeData
+import me.zolotov.kodepointhello.generatorhello.generateUnicodeData
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {

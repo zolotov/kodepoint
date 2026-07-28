@@ -1,4 +1,4 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
 fun CharSequence.codePointAt(index: Int): Codepoint {
   if (index !in indices) throw IndexOutOfBoundsException("Index out of range: $index, size: $length")

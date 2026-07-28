@@ -1,7 +1,7 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
-import me.zolotov.kodepoint.category.Category
-import me.zolotov.kodepoint.script.UnicodeScript
+import me.zolotov.kodepointhello.categoryhello.Category
+import me.zolotov.kodepointhello.scripthello.UnicodeScript
 
 internal actual fun codepointOf(highSurrogate: Char, lowSurrogate: Char): Codepoint =
     Codepoint(Character.toCodePoint(highSurrogate, lowSurrogate))

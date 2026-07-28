@@ -1,13 +1,13 @@
-package me.zolotov.kodepoint.unicode
+package me.zolotov.kodepointhello.unicodehello
 
-import me.zolotov.kodepoint.category.Category
-import me.zolotov.kodepoint.generated.CharacterData
-import me.zolotov.kodepoint.generated.ScriptData
-import me.zolotov.kodepoint.internal.asciiToLowerCase
-import me.zolotov.kodepoint.internal.asciiToUpperCase
-import me.zolotov.kodepoint.internal.binarySearchRange
-import me.zolotov.kodepoint.internal.isAscii
-import me.zolotov.kodepoint.script.UnicodeScript
+import me.zolotov.kodepointhello.categoryhello.Category
+import me.zolotov.kodepointhello.generatedhello.CharacterData
+import me.zolotov.kodepointhello.generatedhello.ScriptData
+import me.zolotov.kodepointhello.internalhello.asciiToLowerCase
+import me.zolotov.kodepointhello.internalhello.asciiToUpperCase
+import me.zolotov.kodepointhello.internalhello.binarySearchRange
+import me.zolotov.kodepointhello.internalhello.isAscii
+import me.zolotov.kodepointhello.scripthello.UnicodeScript
 
 /**
  * Unicode character property functions.

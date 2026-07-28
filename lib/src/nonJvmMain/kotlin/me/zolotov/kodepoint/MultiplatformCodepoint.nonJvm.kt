@@ -1,8 +1,8 @@
-package me.zolotov.kodepoint
+package me.zolotov.kodepointhello
 
-import me.zolotov.kodepoint.category.Category
-import me.zolotov.kodepoint.script.UnicodeScript
-import me.zolotov.kodepoint.unicode.Codepoints
+import me.zolotov.kodepointhello.categoryhello.Category
+import me.zolotov.kodepointhello.scripthello.UnicodeScript
+import me.zolotov.kodepointhello.unicodehello.Codepoints
 
 private const val MIN_HIGH_SURROGATE = 0xD800
 private const val MIN_LOW_SURROGATE = 0xDC00
