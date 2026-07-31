@@ -92,7 +92,7 @@ tasks.register("wasmJsBenchmarkPackage") {
 tasks.register<BenchmarkReportTask>("ciBenchmark") {
     group = "benchmark"
     description = "Run CI benchmark targets, normalize the outputs, emit a GitHub summary, and build a Pages bundle."
-    dependsOn("jvmQuickBenchmark", "wasmJsQuickBenchmark", ":unicode:characterDataMetrics")
+    dependsOn("jvmBenchmark", "wasmJsBenchmark", ":unicode:characterDataMetrics")
 
     benchmarkReportsDirectory.set(layout.buildDirectory.dir("reports/benchmarks"))
     characterDataMetricsFile.set(project(":unicode").layout.buildDirectory.file("reports/character-data/metrics.json"))

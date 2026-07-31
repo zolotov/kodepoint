@@ -93,7 +93,7 @@ CharacterData size metrics are written to `unicode/build/reports/character-data/
 
 The Gradle task owns the rest:
 
-- running `jvmQuickBenchmark`, `wasmJsQuickBenchmark`, and `:unicode:characterDataMetrics`
+- running `jvmBenchmark`, `wasmJsBenchmark` (the full `main` profile), and `:unicode:characterDataMetrics`
 - normalizing results into one JSON schema
 - comparing the current run to the latest published baseline (per-benchmark confidence-interval overlap decides significance)
 - writing `summary.md` and appending it to `GITHUB_STEP_SUMMARY` when present

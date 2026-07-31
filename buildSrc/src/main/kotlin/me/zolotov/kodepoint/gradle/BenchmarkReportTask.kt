@@ -440,10 +440,10 @@ abstract class BenchmarkReportTask : DefaultTask() {
 
     private fun findLatestBenchmarkReport(target: String): File {
         val candidates = benchmarkReportsDirectory.asFileTree.matching {
-            include("quick/**/$target.json")
+            include("main/**/$target.json")
         }.files
         return candidates.maxByOrNull { it.parentFile.name }
-            ?: error("Could not find a quick benchmark report for '$target' under ${benchmarkReportsDirectory.asFile.get().path}")
+            ?: error("Could not find a benchmark report for '$target' under ${benchmarkReportsDirectory.asFile.get().path}")
     }
 
     private fun githubRunUrl(): String? {
