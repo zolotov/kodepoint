@@ -45,6 +45,16 @@ inline fun CharSequence.forEachCodepoint(f: (Codepoint) -> Unit) {
     }
 }
 
+/**
+ * Returns the number of Unicode codepoints in this sequence.
+ * Unlike [CharSequence.length], surrogate pairs are counted as a single codepoint.
+ */
+fun CharSequence.codePointCount(): Int {
+    var count = 0
+    forEachCodepoint { count++ }
+    return count
+}
+
 inline fun CharSequence.forEachCodepointReversed(f: (Codepoint) -> Unit) {
     var i = length - 1
     while (i >= 0) {

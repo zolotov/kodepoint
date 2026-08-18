@@ -137,6 +137,26 @@ class CharSequenceExtensionsTest {
     }
 
     @Test
+    fun codePointCountAscii() {
+        assertEquals(5, "Hello".codePointCount())
+        assertEquals(0, "".codePointCount())
+    }
+
+    @Test
+    fun codePointCountWithSupplementary() {
+        val text = "A${grinningFace}B${thumbsUp}C"
+        // 5 codepoints, but length is 7 due to the two surrogate pairs
+        assertEquals(7, text.length)
+        assertEquals(5, text.codePointCount())
+    }
+
+    @Test
+    fun codePointCountWithLoneSurrogates() {
+        assertEquals(2, "${loneHighSurrogate}A".codePointCount())
+        assertEquals(2, "A${loneLowSurrogate}".codePointCount())
+    }
+
+    @Test
     fun forEachCodepointReversedAscii() {
         val text = "ABC"
         val result = mutableListOf<Int>()
