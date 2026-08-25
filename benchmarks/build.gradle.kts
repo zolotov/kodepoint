@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.allopen") version "2.4.10"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.17"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.18"
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach { enabled = false }
