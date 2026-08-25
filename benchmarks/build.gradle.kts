@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.allopen") version "2.4.10"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.17"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.18"
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach { enabled = false }
@@ -37,7 +37,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.17")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.18")
                 implementation(project(":kodepoint"))
                 implementation(project(":unicode"))
                 implementation(project(":common"))
