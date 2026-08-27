@@ -16,6 +16,11 @@ allOpen {
     annotation("org.openjdk.jmh.annotations.State")
 }
 
+// JMH 1.37 calls terminally deprecated sun.misc.Unsafe methods, which JDK 24+ warns about on every run.
+tasks.withType<JavaExec>()
+    .matching { it.name.startsWith("jvm") && it.name.endsWith("Benchmark") }
+    .configureEach { jvmArgs("--sun-misc-unsafe-memory-access=allow") }
+
 kotlin {
     jvmToolchain(24)
     applyDefaultHierarchyTemplate()
