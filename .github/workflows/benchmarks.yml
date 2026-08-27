@@ -53,16 +53,61 @@ jobs:
           create_credentials_file: false
 
       - name: Start runner instance
+        id: start
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           INSTANCE_PATH: ${{ vars.GCP_RUNNER_INSTANCE }}
         run: |
-          # Starting an already-running instance is a no-op, so this is safe on every run.
-          curl -sSf -X POST \
+          set -euo pipefail
+
+          # The start call returns HTTP 200 as soon as the operation is *accepted*.
+          # A capacity failure (ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS) lands on the
+          # operation itself seconds later, so the POST status says nothing about whether
+          # the VM came up. Polling is the only way to find out: without it this job goes
+          # green while the benchmark job queues forever against a runner that never
+          # appears — and a runner offline for 14 days is deregistered by GitHub.
+          # Starting an already-running instance is a no-op, so this is safe every run.
+          op=$(curl -sSf -X POST \
             -H "Authorization: Bearer ${ACCESS_TOKEN}" \
             -H "Content-Length: 0" \
-            "https://compute.googleapis.com/compute/v1/${INSTANCE_PATH}/start" > /dev/null
-          echo "Requested start of ${INSTANCE_PATH}."
+            "https://compute.googleapis.com/compute/v1/${INSTANCE_PATH}/start")
+
+          op_url=$(printf '%s' "$op" | jq -r '.selfLink // empty')
+          if [ -z "$op_url" ]; then
+            echo "::error::Start request returned no operation link: ${op}"
+            exit 1
+          fi
+
+          for _ in $(seq 60); do
+            [ "$(printf '%s' "$op" | jq -r '.status')" = "DONE" ] && break
+            sleep 5
+            op=$(curl -sSf -H "Authorization: Bearer ${ACCESS_TOKEN}" "$op_url")
+          done
+
+          status=$(printf '%s' "$op" | jq -r '.status')
+          code=$(printf '%s' "$op" | jq -r '.error.errors[0].code // empty')
+          msg=$(printf '%s' "$op" | jq -r '.error.errors[0].message // empty')
+
+          if [ "$status" != "DONE" ]; then
+            echo "::error::Timed out waiting for ${INSTANCE_PATH} to start."
+            exit 1
+          fi
+
+          if [ -n "$code" ]; then
+            # Never fall back to a GitHub-hosted runner: its numbers are too noisy to
+            # compare against the trend baseline, so a bad run is worse than no run.
+            case "$code" in
+              *RESOURCE_POOL_EXHAUSTED*)
+                echo "::error::GCE has no capacity for the runner in its zone (${code}): ${msg} This is a zone stockout, not a misconfiguration — move the instance to a zone with capacity."
+                ;;
+              *)
+                echo "::error::Starting ${INSTANCE_PATH} failed (${code}): ${msg}"
+                ;;
+            esac
+            exit 1
+          fi
+
+          echo "Started ${INSTANCE_PATH}."
 
   benchmark:
     name: Run Benchmarks
