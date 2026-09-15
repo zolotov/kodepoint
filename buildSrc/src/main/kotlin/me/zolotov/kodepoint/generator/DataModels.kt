@@ -26,7 +26,7 @@ data class CharacterData(
     var isISOControl: Boolean = false,
     var isFormatChar: Boolean = false,
 
-    // Computed boolean properties, derived from JVM Character class
+    // Computed boolean properties, derived from category per the java.lang.Character contract
     var isJavaIdentifierStart: Boolean = false,
     var isJavaIdentifierPart: Boolean = false
 )

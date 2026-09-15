@@ -208,7 +208,7 @@ These produce **identical results** to `java.lang.Character` for all 1,114,112 U
 - `isIdeographic()`
 - `isIdentifierIgnorable()`
 - `isISOControl()`
-- `isJavaIdentifierStart()`, `isJavaIdentifierPart()` – generated directly from `java.lang.Character` during the build
+- `isJavaIdentifierStart()`, `isJavaIdentifierPart()` – derived from the Unicode general category following the `java.lang.Character` contract
 
 ### Known differences
 
