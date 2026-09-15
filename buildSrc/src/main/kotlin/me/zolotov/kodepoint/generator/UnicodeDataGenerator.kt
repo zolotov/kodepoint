@@ -26,25 +26,7 @@ fun generateUnicodeData(
     println("Running Kodepoint Generator...")
     println("Unicode version: $unicodeVersion")
 
-    val dataFiles = listOf(
-        "UnicodeData.txt",
-        "PropList.txt",
-        "DerivedCoreProperties.txt",
-        "Scripts.txt",
-        "CaseFolding.txt",
-        "SpecialCasing.txt"
-    )
-    val dataDir = UnicodeDataDownloader.ensureUnicodeFilesDownloaded(cacheDir, unicodeVersion, dataFiles)
-
-    println("Parsing Unicode data files...")
-    val unicodeData = parsedUnicodeData(
-        unicodeDataFile = dataDir.resolve("UnicodeData.txt"),
-        derivedPropertiesFile = dataDir.resolve("DerivedCoreProperties.txt"),
-        caseFoldingsFile = dataDir.resolve("CaseFolding.txt"),
-        specialCasingFile = dataDir.resolve("SpecialCasing.txt"),
-        scriptsFile = dataDir.resolve("Scripts.txt"),
-        propListFile = dataDir.resolve("PropList.txt")
-    )
+    val unicodeData = loadUnicodeData(cacheDir, unicodeVersion)
     println("Parsed ${unicodeData.scripts.size} script mappings")
 
     println("Packing character properties...")
@@ -94,4 +76,25 @@ fun generateUnicodeData(
     }
 
     println("Generation complete!")
+}
+
+fun loadUnicodeData(cacheDir: Path, unicodeVersion: UnicodeVersion): UnicodeData {
+    val dataFiles = listOf(
+        "UnicodeData.txt",
+        "PropList.txt",
+        "DerivedCoreProperties.txt",
+        "Scripts.txt",
+        "CaseFolding.txt",
+        "SpecialCasing.txt"
+    )
+    val dataDir = UnicodeDataDownloader.ensureUnicodeFilesDownloaded(cacheDir, unicodeVersion, dataFiles)
+    println("Parsing Unicode $unicodeVersion data files...")
+    return parsedUnicodeData(
+        unicodeDataFile = dataDir.resolve("UnicodeData.txt"),
+        derivedPropertiesFile = dataDir.resolve("DerivedCoreProperties.txt"),
+        caseFoldingsFile = dataDir.resolve("CaseFolding.txt"),
+        specialCasingFile = dataDir.resolve("SpecialCasing.txt"),
+        scriptsFile = dataDir.resolve("Scripts.txt"),
+        propListFile = dataDir.resolve("PropList.txt")
+    )
 }

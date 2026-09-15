@@ -5,11 +5,13 @@ import kotlin.test.fail
 
 /**
  * JVM-only exhaustive validation tests that traverse all valid Unicode codepoints
- * and verify that the multiplatform Codepoint implementation produces the same
- * results as JVM's java.lang.Character methods.
+ * and compare the multiplatform Codepoint implementation with JVM's java.lang.Character.
  *
- * These tests ensure cross-platform compatibility by validating against the
- * JVM Unicode implementation.
+ * The tables and the JDK may implement different Unicode releases. The build writes the
+ * UCD delta between them (`ucd-diff.txt`, from `kodepoint.jvmUnicodeVersion` to
+ * `kodepoint.unicodeVersion`), and every test requires its mismatches to be exactly that
+ * delta: nothing the delta doesn't explain, and nothing in the delta the tables missed.
+ * When both versions are equal the delta is empty and the comparison is strict.
  */
 class ValidationTest {
     companion object {
@@ -18,6 +20,11 @@ class ValidationTest {
 
         private val WHITESPACE_JVM_ONLY = setOf(0x001C, 0x001D, 0x001E, 0x001F)
         private val WHITESPACE_UNICODE_ONLY = setOf(0x0085, 0x00A0, 0x2007, 0x202F)
+
+        private fun formatCodepoint(codepoint: Int): String {
+            val hex = "U+${codepoint.toString(16).uppercase().padStart(4, '0')}"
+            return "$hex [https://www.compart.com/en/unicode/$hex]"
+        }
     }
 
     @Test
@@ -91,15 +98,28 @@ class ValidationTest {
         { CharCategory.valueOf(Character.getType(it)).code }
     )
 
+    /** Per test name, the codepoints whose value changed between the JDK's and the tables' Unicode release. */
+    private val expectedDiff: Map<String, Set<Int>>
+    private val diffDescription: String
+
+    init {
+        val lines = checkNotNull(ValidationTest::class.java.getResourceAsStream("/ucd-diff.txt")) {
+            "ucd-diff.txt missing from test resources; run :unicode:generateUcdDiff"
+        }.bufferedReader().readLines()
+        diffDescription = lines.first().removePrefix("# ")
+        expectedDiff = lines
+            .filter { it.isNotBlank() && !it.startsWith("#") }
+            .map { it.split(' ') }
+            .groupBy({ it[0] }, { it[1].toInt(16) })
+            .mapValues { it.value.toSet() }
+    }
+
     private data class Mismatch(
         val codepoint: Int,
         val jvm: Any,
         val multiplatform: Any
     ) {
-        override fun toString(): String {
-            val codepoint = "U+${codepoint.toString(16).uppercase().padStart(4, '0')}"
-            return "$codepoint [https://www.compart.com/en/unicode/$codepoint]: jvm=$jvm, multiplatform=$multiplatform"
-        }
+        override fun toString(): String = "${formatCodepoint(codepoint)}: jvm=$jvm, multiplatform=$multiplatform"
     }
 
     private fun doTest(name: String, multiplatformFn: (Int) -> Any, jvmFn: (Int) -> Any) {
@@ -112,22 +132,31 @@ class ValidationTest {
                 null
             }
         }
-        reportMismatches(name, mismatches)
+        val expected = expectedDiff[name].orEmpty()
+        val unexpected = mismatches.filter { it.codepoint !in expected }
+        val missing = expected - mismatches.map { it.codepoint }.toSet()
+
+        val message = buildString {
+            if (unexpected.isNotEmpty()) {
+                appendLine("$name: ${unexpected.size} mismatches not explained by the $diffDescription")
+                appendSample(unexpected) { it.toString() }
+            }
+            if (missing.isNotEmpty()) {
+                appendLine("$name: ${missing.size} codepoints changed in the $diffDescription but the tables agree with the JVM")
+                appendSample(missing.sorted()) { formatCodepoint(it) }
+            }
+        }
+        if (message.isNotEmpty()) {
+            fail(message)
+        }
     }
 
-    private fun reportMismatches(name: String, mismatches: List<Mismatch>) {
-        if (mismatches.isNotEmpty()) {
-            val sampleSize = minOf(20, mismatches.size)
-            val sample = mismatches.take(sampleSize)
-            val message = buildString {
-                appendLine("$name: ${mismatches.size} mismatches found")
-                appendLine("First $sampleSize mismatches:")
-                sample.forEach { appendLine("  $it") }
-                if (mismatches.size > sampleSize) {
-                    appendLine("  ... and ${mismatches.size - sampleSize} more")
-                }
-            }
-            fail(message)
+    private fun <T> StringBuilder.appendSample(items: List<T>, format: (T) -> String) {
+        val sampleSize = minOf(20, items.size)
+        appendLine("First $sampleSize:")
+        items.take(sampleSize).forEach { appendLine("  ${format(it)}") }
+        if (items.size > sampleSize) {
+            appendLine("  ... and ${items.size - sampleSize} more")
         }
     }
 }

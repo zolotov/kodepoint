@@ -278,6 +278,18 @@ Output to `unicode/build/generated/sources/unicode-data/`:
 - `CharacterDataSSP.kt` - Binary search for Planes 3-16
 - `CharacterData.kt` - Facade with routing logic and shared value table
 
+## Validation Against the JVM
+
+`unicode/src/jvmTest/.../ValidationTest.kt` compares every table-backed function with `java.lang.Character`
+for all 1,114,112 codepoints. The tables follow `kodepoint.unicodeVersion`, while `Character` follows the
+toolchain JDK, whose Unicode release is declared as `kodepoint.jvmUnicodeVersion` in `gradle.properties`.
+
+`:unicode:generateUcdDiff` parses both UCD releases and writes the per-property delta between them
+(`build/generated/resources/ucd-diff/ucd-diff.txt`) into the test resources. Each test then requires its
+mismatches to equal that delta exactly: an unexplained mismatch is a table bug, a delta entry the tables
+did not reproduce is a stale or mis-generated table. With equal versions the delta is empty and the
+comparison is strict, so upgrading the tables ahead of the JDK is a one-line change plus a review of the diff.
+
 ## Unicode Script Handling
 
 ### Script Enum Generation
