@@ -4,6 +4,9 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import me.zolotov.kodepoint.generator.RangeValue
 
+internal const val LATIN1_PLANE_NAME = "Latin1"
+internal const val GENERATED_PACKAGE = "me.zolotov.kodepoint.generated"
+
 internal fun encodeIntArrayAsString16(data: IntArray): String {
     return buildString {
         for ((index, value) in data.withIndex()) {
@@ -41,6 +44,15 @@ internal fun intInternalConstProperty(name: String, literal: String): PropertySp
     PropertySpec.builder(name, Int::class, KModifier.INTERNAL, KModifier.CONST)
         .initializer("%L", literal)
         .build()
+
+/**
+ * Emits [bit] as a `1 shl n` literal, so the generated constant keeps the shape it has in
+ * [me.zolotov.kodepoint.generator.PropertyPacker] instead of an opaque number.
+ */
+internal fun singleBitConstProperty(name: String, bit: Int): PropertySpec {
+    require(bit.countOneBits() == 1) { "$name = ${hex(bit)} is not a single bit" }
+    return intInternalConstProperty(name, "1 shl ${bit.countTrailingZeroBits()}")
+}
 
 private val hexFormat = HexFormat {
     upperCase = true

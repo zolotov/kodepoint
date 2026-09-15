@@ -114,7 +114,7 @@ object Codepoints {
         // Special handling for titlecase letters (Lt) - these map to their uppercase variants
         // U+01C5 Dž -> U+01C4 DŽ, U+01C8 Lj -> U+01C7 LJ
         // U+01CB Nj -> U+01CA NJ, U+01F2 Dz -> U+01F1 DZ
-        if (getCategoryCode(props) == CharacterData.CAT_LT) {
+        if (getCategoryCode(props) == Category.TITLECASE_LETTER.ordinal) {
             return when (codepoint) {
                 0x01C5, 0x01C8, 0x01CB, 0x01F2 -> codepoint - 1
                 else -> codepoint
@@ -154,7 +154,7 @@ object Codepoints {
         }
         // Also ignorable: Format characters (category Cf)
         val props = CharacterData.getProperties(codepoint)
-        return getCategoryCode(props) == CharacterData.CAT_CF
+        return getCategoryCode(props) == Category.FORMAT.ordinal
     }
 
     private fun isUnicodeIdentifierStartSlow(codepoint: Int): Boolean {
