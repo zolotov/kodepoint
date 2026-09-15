@@ -248,7 +248,7 @@ Unicode data tables are generated at build time from the Unicode Character Datab
 
 `buildSrc/src/main/kotlin/me/zolotov/kodepoint/generator/UnicodeDataGenerator.kt` orchestrates:
 
-1. **Download Unicode Data** from `https://www.unicode.org/Public/16.0.0/ucd/`
+1. **Download Unicode Data** from `https://www.unicode.org/Public/<version>/ucd/`, where the version comes from the `kodepoint.unicodeVersion` property in `gradle.properties` (cached per version under `build/unicode-cache/`)
    - `UnicodeData.txt` - Core character properties
    - `PropList.txt` - Additional properties
    - `DerivedCoreProperties.txt` - Derived properties

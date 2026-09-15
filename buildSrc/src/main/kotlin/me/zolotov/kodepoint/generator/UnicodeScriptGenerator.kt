@@ -15,12 +15,11 @@ internal val UNICODE_SCRIPT_CLASS_NAME = ClassName("me.zolotov.kodepoint.script"
  */
 @Suppress("unused")
 @OptIn(ExperimentalPathApi::class)
-fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: String) {
+fun generateUnicodeScript(unicodeVersion: UnicodeVersion, outputDir: Path, cacheDir: Path, additionalComment: String) {
     println("Running UnicodeScript Generator...")
-    println("Unicode version: $UNICODE_VERSION")
+    println("Unicode version: $unicodeVersion")
 
-    val dataDir = cacheDir.resolve("unicode-data-$UNICODE_VERSION")
-    UnicodeDataDownloader.ensureUnicodeFilesDownloaded(dataDir, listOf("Scripts.txt"))
+    val dataDir = UnicodeDataDownloader.ensureUnicodeFilesDownloaded(cacheDir, unicodeVersion, listOf("Scripts.txt"))
 
     println("Parsing Scripts.txt...")
     val scripts = parseScriptsFile(dataDir.resolve("Scripts.txt"))
@@ -35,7 +34,7 @@ fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: St
             """
             Unicode Script values.
 
-            Source: $UNICODE_BASE_URL/Scripts.txt
+            Source: ${unicodeVersion.ucdBaseUrl}/Scripts.txt
 
             $additionalComment
             """.trimIndent()

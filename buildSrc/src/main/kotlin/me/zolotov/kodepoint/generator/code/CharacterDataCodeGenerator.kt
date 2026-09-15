@@ -21,6 +21,7 @@ fun generateCharacterDataClasses(
     outputDir: Path,
     propertyBuildResult: PropertyTableBuildResult,
     additionalComment: String,
+    unicodeVersion: UnicodeVersion,
     largeCaseDeltaRanges: LastCaseDeltaRanges
 ) {
     val uniqueCharacterProperties = propertyBuildResult.uniqueCharacterProperties
@@ -56,7 +57,8 @@ fun generateCharacterDataClasses(
                 uniqueCharacterProperties,
                 propertyBuildResult.planeResults,
                 largeCaseDeltaRanges,
-                additionalComment
+                additionalComment,
+                unicodeVersion
             )
         )
         .build()
@@ -74,13 +76,9 @@ private fun latin1CharacterData(
     return TypeSpec.objectBuilder(characterDataLatin1ClassName)
         .addModifiers(KModifier.INTERNAL)
         .addKdoc(
-            """
-            Auto-generated Unicode character property data for Latin-1 (0x00-0xFF).
-            Unicode version: $UNICODE_VERSION
-            Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.
-            
-            $additionalComment
-        """.trimIndent()
+            "Auto-generated Unicode character property data for Latin-1 (0x00-0xFF).\n" +
+                    "Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.\n" +
+                    "\n" + additionalComment
         )
         .addProperty(
             PropertySpec
@@ -123,13 +121,9 @@ private fun planeCharacterData(
     return TypeSpec.objectBuilder(characterDataClassName)
         .addModifiers(KModifier.INTERNAL)
         .addKdoc(
-            """
-            Auto-generated Unicode character property data for ${planeResult.plane.name}.
-            Unicode version: $UNICODE_VERSION
-            Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.
-            
-            $additionalComment
-        """.trimIndent()
+            "Auto-generated Unicode character property data for ${planeResult.plane.name}.\n" +
+                    "Uses byte indices into CharacterData.UNIQUE_PROPERTY_VALUES for memory efficiency.\n" +
+                    "\n" + additionalComment
         )
         .addProperty(blockShiftProperty)
         .addProperty(blockMaskProperty)
@@ -160,13 +154,7 @@ private fun sparseCharacterData(
         .build()
     return TypeSpec.objectBuilder(characterDataClassName)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc("""
-            Auto-generated Unicode character property data for ${planeResult.plane.name}.
-            Unicode version: $UNICODE_VERSION
-            
-            $additionalComment
-        """.trimIndent()
-        )
+        .addKdoc("Auto-generated Unicode character property data for ${planeResult.plane.name}.\n\n$additionalComment")
         .addProperty(rangesProperty)
         .addFunction(
             FunSpec.builder(GET_PROPERTIES)
@@ -184,7 +172,8 @@ private fun characterDataFacade(
     uniqueCharacterProperties: IntArray,
     planeResults: List<PlaneTableResult>,
     largeCaseDeltaRanges: LastCaseDeltaRanges,
-    additionalComment: String
+    additionalComment: String,
+    unicodeVersion: UnicodeVersion
 ): TypeSpec {
     // Value lookup table for byte indices
     val uniquePropertyValuesProperty = PropertySpec
@@ -196,13 +185,13 @@ private fun characterDataFacade(
 
     return TypeSpec.objectBuilder(className)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc(
-            """
-            Auto-generated Unicode character property data facade.
-            Unicode version: $UNICODE_VERSION
-            
-            $additionalComment
-        """.trimIndent()
+        .addKdoc("Auto-generated Unicode character property data facade.\n\n$additionalComment")
+        .addProperty(
+            PropertySpec
+                .builder("UNICODE_VERSION", String::class, KModifier.INTERNAL, KModifier.CONST)
+                .addKdoc("Version of the Unicode Character Database these tables were generated from.")
+                .initializer("%S", unicodeVersion.value)
+                .build()
         )
         // Bit constants (internal for use by Codepoints), emitted from the same values
         // PropertyPacker packs with, so the accessors can never decode a stale layout.
