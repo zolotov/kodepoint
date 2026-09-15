@@ -1,4 +1,5 @@
 import me.zolotov.kodepoint.generator.UnicodeVersion
+import me.zolotov.kodepoint.generator.generateUcdDiff
 import me.zolotov.kodepoint.generator.generateUnicodeData
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
@@ -40,6 +41,30 @@ val generateUnicodeData by tasks.registering {
             characterDataMetricsReport.get().asFile.toPath()
         )
     }
+}
+
+val generateUcdDiff by tasks.registering {
+    description = "Write the UCD delta between the toolchain JDK's Unicode version and the tables' version for ValidationTest."
+    val tablesVersion = providers.gradleProperty("kodepoint.unicodeVersion")
+    val jvmVersion = providers.gradleProperty("kodepoint.jvmUnicodeVersion")
+    val cacheDir = layout.buildDirectory.dir("unicode-cache")
+    val outputDir = layout.buildDirectory.dir("generated/resources/ucd-diff")
+    inputs.property("tablesVersion", tablesVersion)
+    inputs.property("jvmVersion", jvmVersion)
+    outputs.dir(outputDir)
+
+    doLast {
+        generateUcdDiff(
+            from = UnicodeVersion(jvmVersion.get()),
+            to = UnicodeVersion(tablesVersion.get()),
+            cacheDir = cacheDir.get().asFile.toPath(),
+            output = outputDir.get().asFile.toPath().resolve("ucd-diff.txt")
+        )
+    }
+}
+
+kotlin.sourceSets.named("jvmTest") {
+    resources.srcDir(generateUcdDiff)
 }
 
 tasks.register("characterDataMetrics") {
