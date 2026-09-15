@@ -8,6 +8,9 @@ import me.zolotov.kodepoint.generator.UNICODE_SCRIPT_CLASS_NAME
 import me.zolotov.kodepoint.generator.UNICODE_VERSION
 import java.nio.file.Path
 
+/** Lookup entry point that every generated `ScriptData*` plane object exposes. */
+private const val GET_SCRIPT_ID = "getScriptId"
+
 private fun scriptDataClassName(planeName: String) = ClassName(GENERATED_PACKAGE, "ScriptData${planeName}")
 
 fun generateScriptDataClasses(
@@ -15,7 +18,7 @@ fun generateScriptDataClasses(
     scriptBuildResult: ScriptBuildResult,
     additionalComment: String
 ) {
-    val scriptDataLatin1ClassName = scriptDataClassName("Latin1")
+    val scriptDataLatin1ClassName = scriptDataClassName(LATIN1_PLANE_NAME)
     FileSpec.builder(scriptDataLatin1ClassName)
         .addType(latin1ScriptData(scriptDataLatin1ClassName, scriptBuildResult.latin1ScriptIds, additionalComment))
         .build()
@@ -35,7 +38,7 @@ fun generateScriptDataClasses(
     }
 
     val scriptDataFacadeClass = ClassName(GENERATED_PACKAGE, "ScriptData")
-    val scriptDataFacade = scriptDataFacade(scriptDataFacadeClass, additionalComment)
+    val scriptDataFacade = scriptDataFacade(scriptDataFacadeClass, scriptBuildResult.planeResults, additionalComment)
     FileSpec.builder(scriptDataFacadeClass)
         .addType(scriptDataFacade)
         .build()
@@ -63,7 +66,7 @@ private fun latin1ScriptData(className: ClassName, scriptIds: IntArray, addition
         )
         .addProperty(scriptsProperty)
         .addFunction(
-            FunSpec.builder("getScriptId")
+            FunSpec.builder(GET_SCRIPT_ID)
                 .addModifiers(KModifier.INTERNAL)
                 .addParameter("codepoint", Int::class)
                 .returns(Int::class)
@@ -118,7 +121,7 @@ private fun planeScriptData(
         .addProperty(blockIndexProperty)
         .addProperty(scriptsProperty)
         .addFunction(
-            FunSpec.builder("getScriptId")
+            FunSpec.builder(GET_SCRIPT_ID)
                 .addModifiers(KModifier.INTERNAL)
                 .addParameter("offset", Int::class)
                 .returns(Int::class)
@@ -155,7 +158,7 @@ private fun sparseScriptData(
         )
         .addProperty(rangesProperty)
         .addFunction(
-            FunSpec.builder("getScriptId")
+            FunSpec.builder(GET_SCRIPT_ID)
                 .addModifiers(KModifier.INTERNAL)
                 .addParameter("offset", Int::class)
                 .returns(Int::class)
@@ -165,7 +168,45 @@ private fun sparseScriptData(
         .build()
 }
 
-private fun scriptDataFacade(className: ClassName, additionalComment: String): TypeSpec {
+private fun scriptDataFacade(
+    className: ClassName,
+    planeResults: List<ScriptPlaneResult>,
+    additionalComment: String
+): TypeSpec {
+    require(planeResults.isNotEmpty()) { "At least one plane is required to generate the ScriptData facade" }
+
+    val getScript = FunSpec.builder("getScript")
+        .addModifiers(KModifier.INTERNAL)
+        .addParameter("cp", Int::class)
+        .returns(UNICODE_SCRIPT_CLASS_NAME)
+        .beginControlFlow("return when")
+        .addStatement("cp < 0 -> %T.UNKNOWN", UNICODE_SCRIPT_CLASS_NAME)
+        // Latin-1 has its own object and covers everything below the first plane's start.
+        .addStatement(
+            "cp < %L -> %T.entries[%T.%N(cp)]",
+            hex(planeResults.first().plane.startCodepoint),
+            UNICODE_SCRIPT_CLASS_NAME,
+            scriptDataClassName(LATIN1_PLANE_NAME),
+            GET_SCRIPT_ID
+        )
+
+    // Sparse and table planes both expose getScriptId(offset), so every plane reads the same way
+    // and the branches follow straight from the plane bounds.
+    for ((name, startCodepoint, endCodepoint) in planeResults.map { it.plane }) {
+        getScript.addStatement(
+            "cp <= %L -> %T.entries[%T.%N(cp - %L)]",
+            hex(endCodepoint),
+            UNICODE_SCRIPT_CLASS_NAME,
+            scriptDataClassName(name),
+            GET_SCRIPT_ID,
+            hex(startCodepoint)
+        )
+    }
+
+    getScript
+        .addStatement("else -> %T.UNKNOWN", UNICODE_SCRIPT_CLASS_NAME)
+        .endControlFlow()
+
     return TypeSpec.objectBuilder(className)
         .addModifiers(KModifier.INTERNAL)
         .addKdoc(
@@ -176,41 +217,6 @@ private fun scriptDataFacade(className: ClassName, additionalComment: String): T
             $additionalComment
         """.trimIndent()
         )
-        .addFunction(
-            FunSpec.builder("getScript")
-                .addModifiers(KModifier.INTERNAL)
-                .addParameter("cp", Int::class)
-                .returns(UNICODE_SCRIPT_CLASS_NAME)
-                .beginControlFlow("return when")
-                .addStatement("cp < 0 -> %T.UNKNOWN", UNICODE_SCRIPT_CLASS_NAME)
-                .addStatement(
-                    "cp < 0x100 -> %T.entries[%T.getScriptId(cp)]",
-                    UNICODE_SCRIPT_CLASS_NAME,
-                    scriptDataClassName("Latin1")
-                )
-                .addStatement(
-                    "cp <= 0xFFFF -> %T.entries[%T.getScriptId(cp - 0x100)]",
-                    UNICODE_SCRIPT_CLASS_NAME,
-                    scriptDataClassName("BMP")
-                )
-                .addStatement(
-                    "cp <= 0x1FFFF -> %T.entries[%T.getScriptId(cp - 0x10000)]",
-                    UNICODE_SCRIPT_CLASS_NAME,
-                    scriptDataClassName("SMP")
-                )
-                .addStatement(
-                    "cp <= 0x2FFFF -> %T.entries[%T.getScriptId(cp - 0x20000)]",
-                    UNICODE_SCRIPT_CLASS_NAME,
-                    scriptDataClassName("SIP")
-                )
-                .addStatement(
-                    "cp <= 0x10FFFF -> %T.entries[%T.getScriptId(cp - 0x30000)]",
-                    UNICODE_SCRIPT_CLASS_NAME,
-                    scriptDataClassName("SSP")
-                )
-                .addStatement("else -> %T.UNKNOWN", UNICODE_SCRIPT_CLASS_NAME)
-                .endControlFlow()
-                .build()
-        )
+        .addFunction(getScript.build())
         .build()
 }

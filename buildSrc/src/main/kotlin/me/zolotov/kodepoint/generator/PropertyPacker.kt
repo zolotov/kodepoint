@@ -30,6 +30,7 @@ object PropertyPacker {
     const val CASE_DELTA_MASK = 0x3FF            // bits 0-9 (10 bits)
     const val DELTA_TO_LOWERCASE_BIT = 1 shl 10  // bit 10
     const val CATEGORY_SHIFT = 11
+    const val CATEGORY_BITS = 0x1F               // bits 11-15 (5 bits), before shifting
     const val IS_OTHER_UPPERCASE_BIT = 1 shl 16
     const val IS_OTHER_LOWERCASE_BIT = 1 shl 17
     const val IS_WHITESPACE_BIT = 1 shl 18
@@ -48,6 +49,13 @@ object PropertyPacker {
 
     const val MIN_DELTA = -512
     const val MAX_DELTA = 511
+
+    init {
+        val maxCode = GeneralCategory.entries.maxOf { it.code }
+        require(maxCode <= CATEGORY_BITS) {
+            "General category code $maxCode does not fit in the ${CATEGORY_BITS.countOneBits()}-bit category field"
+        }
+    }
 
     fun pack(data: CharacterData): Int {
         var props: Int
