@@ -1,8 +1,18 @@
 package me.zolotov.kodepoint.generator
 
-const val UNICODE_VERSION = "16.0.0"
-const val UNICODE_BASE_URL = "https://www.unicode.org/Public/$UNICODE_VERSION/ucd"
 const val MAX_CODEPOINT = 0x10FFFF
+
+@JvmInline
+value class UnicodeVersion(val value: String) {
+    init {
+        require(Regex("\\d+\\.\\d+\\.\\d+").matches(value)) { "Unicode version must look like 16.0.0, got '$value'" }
+    }
+
+    val ucdBaseUrl: String
+        get() = "https://www.unicode.org/Public/$value/ucd"
+
+    override fun toString(): String = value
+}
 
 /**
  * All Unicode planes for generation.

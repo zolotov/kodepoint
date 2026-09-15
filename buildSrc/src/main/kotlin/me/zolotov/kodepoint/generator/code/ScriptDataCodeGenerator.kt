@@ -5,7 +5,6 @@ import com.squareup.kotlinpoet.ClassName
 import me.zolotov.kodepoint.generator.ScriptBuildResult
 import me.zolotov.kodepoint.generator.ScriptPlaneResult
 import me.zolotov.kodepoint.generator.UNICODE_SCRIPT_CLASS_NAME
-import me.zolotov.kodepoint.generator.UNICODE_VERSION
 import java.nio.file.Path
 
 /** Lookup entry point that every generated `ScriptData*` plane object exposes. */
@@ -56,14 +55,7 @@ private fun latin1ScriptData(className: ClassName, scriptIds: IntArray, addition
         .build()
     return TypeSpec.objectBuilder(className)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc(
-            """
-            Auto-generated Unicode script data for Latin-1 (0x00-0xFF).
-            Unicode version: $UNICODE_VERSION
-            
-            $additionalComment
-        """.trimIndent()
-        )
+        .addKdoc("Auto-generated Unicode script data for Latin-1 (0x00-0xFF).\n\n$additionalComment")
         .addProperty(scriptsProperty)
         .addFunction(
             FunSpec.builder(GET_SCRIPT_ID)
@@ -107,14 +99,7 @@ private fun planeScriptData(
 
     return TypeSpec.objectBuilder(scriptDataClassName)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc(
-            """
-            Auto-generated Unicode script data for ${planeResult.plane.name}.
-            Unicode version: $UNICODE_VERSION
-            
-            $additionalComment
-        """.trimIndent()
-        )
+        .addKdoc("Auto-generated Unicode script data for ${planeResult.plane.name}.\n\n$additionalComment")
         .addProperty(blockShiftProperty)
         .addProperty(blockMaskProperty)
         .addProperty(blockSizeProperty)
@@ -148,14 +133,7 @@ private fun sparseScriptData(
         .build()
     return TypeSpec.objectBuilder(scriptDataClassName)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc(
-            """
-            Auto-generated Unicode script data for ${planeResult.plane.name}.
-            Unicode version: $UNICODE_VERSION
-            
-            $additionalComment
-        """.trimIndent()
-        )
+        .addKdoc("Auto-generated Unicode script data for ${planeResult.plane.name}.\n\n$additionalComment")
         .addProperty(rangesProperty)
         .addFunction(
             FunSpec.builder(GET_SCRIPT_ID)
@@ -209,14 +187,7 @@ private fun scriptDataFacade(
 
     return TypeSpec.objectBuilder(className)
         .addModifiers(KModifier.INTERNAL)
-        .addKdoc(
-            """
-            Auto-generated Unicode script data facade.
-            Unicode version: $UNICODE_VERSION
-    
-            $additionalComment
-        """.trimIndent()
-        )
+        .addKdoc("Auto-generated Unicode script data facade.\n\n$additionalComment")
         .addFunction(getScript.build())
         .build()
 }

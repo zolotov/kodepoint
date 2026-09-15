@@ -13,6 +13,9 @@ import me.zolotov.kodepoint.script.UnicodeScript
  * Unicode character property functions.
  */
 object Codepoints {
+    /** Version of the Unicode Character Database backing these tables, e.g. `16.0.0`. */
+    const val UNICODE_VERSION: String = CharacterData.UNICODE_VERSION
+
     private const val ASCII_SPACE = 0x20
 
     // Per-codepoint ASCII property flags packed into one shared 128-entry table,

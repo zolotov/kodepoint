@@ -7,9 +7,10 @@ import kotlin.io.path.exists
 import kotlin.io.path.outputStream
 
 object UnicodeDataDownloader {
-    fun ensureUnicodeFilesDownloaded(dataDir: Path, dataFileNames: List<String>) {
+    fun ensureUnicodeFilesDownloaded(cacheDir: Path, version: UnicodeVersion, dataFileNames: List<String>): Path {
+        val dataDir = cacheDir.resolve("unicode-data-$version")
         for (fileName in dataFileNames) {
-            val url = "$UNICODE_BASE_URL/$fileName"
+            val url = "${version.ucdBaseUrl}/$fileName"
             val targetFile = dataDir.resolve(fileName)
             if (targetFile.exists()) {
                 println("  Using $fileName from cache")
@@ -18,6 +19,7 @@ object UnicodeDataDownloader {
                 downloadFile(url, targetFile)
             }
         }
+        return dataDir
     }
 
     private fun downloadFile(url: String, target: Path) {

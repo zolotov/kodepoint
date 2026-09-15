@@ -15,25 +15,16 @@ import kotlin.io.path.deleteRecursively
  * 3. Build property and script tables
  * 4. Generate Kotlin source files
  */
-@Suppress("unused")
-fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: String) {
-    generateUnicodeData(
-        outputDir = outputDir,
-        cacheDir = cacheDir,
-        additionalComment = additionalComment,
-        characterDataMetricsOutput = null
-    )
-}
-
 @OptIn(ExperimentalPathApi::class)
 fun generateUnicodeData(
+    unicodeVersion: UnicodeVersion,
     outputDir: Path,
     cacheDir: Path,
     additionalComment: String,
     characterDataMetricsOutput: Path?
 ) {
     println("Running Kodepoint Generator...")
-    println("Unicode version: $UNICODE_VERSION")
+    println("Unicode version: $unicodeVersion")
 
     val dataFiles = listOf(
         "UnicodeData.txt",
@@ -43,8 +34,7 @@ fun generateUnicodeData(
         "CaseFolding.txt",
         "SpecialCasing.txt"
     )
-    val dataDir = cacheDir.resolve("unicode-data-$UNICODE_VERSION")
-    UnicodeDataDownloader.ensureUnicodeFilesDownloaded(dataDir, dataFiles)
+    val dataDir = UnicodeDataDownloader.ensureUnicodeFilesDownloaded(cacheDir, unicodeVersion, dataFiles)
 
     println("Parsing Unicode data files...")
     val unicodeData = parsedUnicodeData(
@@ -95,8 +85,9 @@ fun generateUnicodeData(
 
     outputDir.deleteRecursively()
 
-    generateCharacterDataClasses(outputDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
-    generateScriptDataClasses(outputDir, scriptBuildResult, additionalComment)
+    val headerComment = "Unicode version: $unicodeVersion\n$additionalComment"
+    generateCharacterDataClasses(outputDir, propertyBuildResult, headerComment, unicodeVersion, largeCaseDeltaRanges)
+    generateScriptDataClasses(outputDir, scriptBuildResult, headerComment)
     characterDataMetricsOutput?.let {
         characterDataMetrics.writeJson(it)
         println("Wrote CharacterData metrics to $it")
