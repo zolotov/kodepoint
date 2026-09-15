@@ -1,8 +1,14 @@
 package me.zolotov.kodepoint.generator
 
-import me.zolotov.kodepoint.generator.dsl.kotlinFile
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.TypeSpec
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.deleteRecursively
+import kotlin.io.path.forEachLine
+
+internal val UNICODE_SCRIPT_CLASS_NAME = ClassName("me.zolotov.kodepoint.script", "UnicodeScript")
 
 /**
  * Generates the UnicodeScript enum from Unicode data.
@@ -24,28 +30,27 @@ fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: St
     val scriptNames = extractScriptNamesInCodepointOrder(scripts)
     println("Found ${scriptNames.size} unique scripts")
 
-    val generator = kotlinFile("me.zolotov.kodepoint.script") {
-        kdoc {
-            line("Unicode Script values.")
-            emptyLine()
-            line("Source: $UNICODE_BASE_URL/Scripts.txt")
-            emptyLine()
-            multiline(additionalComment)
-        }
+    val enumSpec = TypeSpec.enumBuilder("UnicodeScript")
+        .addKdoc(
+            """
+            Unicode Script values.
 
-        enumClass("UnicodeScript", annotations = listOf("@Suppress(\"SpellCheckingInspection\")")) {
-            entries(scriptNames.map { it.asEnumValue() })
-        }
+            Source: $UNICODE_BASE_URL/Scripts.txt
+
+            $additionalComment
+            """.trimIndent()
+        )
+    scriptNames.forEach {
+        enumSpec.addEnumConstant(it.uppercase().replace('-', '_'))
     }
 
     outputDir.deleteRecursively()
-    outputDir.resolve("me/zolotov/kodepoint/script/UnicodeScript.kt")
-        .createParentDirectories()
-        .bufferedWriter().use { writer ->
-            generator.writeTo(writer)
-            println("Generated UnicodeScript.kt with ${scriptNames.size} scripts")
-            println("Generation complete!")
-        }
+    FileSpec.builder(UNICODE_SCRIPT_CLASS_NAME)
+        .addType(enumSpec.build())
+        .build()
+        .writeTo(outputDir)
+    println("Generated UnicodeScript.kt with ${scriptNames.size} scripts")
+    println("Generation complete!")
 }
 
 /**
@@ -54,7 +59,7 @@ fun generateUnicodeScript(outputDir: Path, cacheDir: Path, additionalComment: St
 fun parseScriptsFile(scriptsFile: Path): Map<Int, String> {
     return buildMap {
         scriptsFile.forEachLine { line ->
-            if (!line.isBlank() && !line.startsWith("#")) {
+            if (line.isNotBlank() && !line.startsWith("#")) {
                 val data = line.substringBefore('#')
                 val (range, script) = data.split(';', limit = 2).map { it.trim() }
                 for (cp in parseRange(range.trim())) {
@@ -71,15 +76,14 @@ fun parseScriptsFile(scriptsFile: Path): Map<Int, String> {
  * the enum ordinals match the script IDs in the lookup tables.
  */
 private fun extractScriptNamesInCodepointOrder(scripts: Map<Int, String>): List<String> {
-    val scriptNames = mutableListOf("Unknown")
-    val seen = mutableSetOf("Unknown")
-    for (cp in 0..MAX_CODEPOINT) {
-        val script = scripts[cp] ?: "Unknown"
-        if (seen.add(script)) {
-            scriptNames.add(script)
+    return buildList {
+        add("Unknown")
+        val seen = mutableSetOf("Unknown")
+        for (cp in 0..MAX_CODEPOINT) {
+            val script = scripts[cp] ?: "Unknown"
+            if (seen.add(script)) {
+                add(script)
+            }
         }
     }
-    return scriptNames
 }
-
-private fun String.asEnumValue(): String = uppercase().replace('-', '_')

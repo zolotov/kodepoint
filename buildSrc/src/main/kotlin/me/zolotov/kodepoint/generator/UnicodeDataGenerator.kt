@@ -4,7 +4,6 @@ import me.zolotov.kodepoint.generator.code.generateCharacterDataClasses
 import me.zolotov.kodepoint.generator.code.generateScriptDataClasses
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 
 /**
@@ -17,7 +16,6 @@ import kotlin.io.path.deleteRecursively
  * 4. Generate Kotlin source files
  */
 @Suppress("unused")
-@OptIn(ExperimentalPathApi::class)
 fun generateUnicodeData(outputDir: Path, cacheDir: Path, additionalComment: String) {
     generateUnicodeData(
         outputDir = outputDir,
@@ -96,10 +94,9 @@ fun generateUnicodeData(
     println("Total generated data size: $totalSize bytes")
 
     outputDir.deleteRecursively()
-    val generatedDir = outputDir.resolve("me/zolotov/kodepoint/generated").createDirectories()
 
-    generateCharacterDataClasses(generatedDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
-    generateScriptDataClasses(generatedDir, scriptBuildResult, additionalComment)
+    generateCharacterDataClasses(outputDir, propertyBuildResult, additionalComment, largeCaseDeltaRanges)
+    generateScriptDataClasses(outputDir, scriptBuildResult, additionalComment)
     characterDataMetricsOutput?.let {
         characterDataMetrics.writeJson(it)
         println("Wrote CharacterData metrics to $it")
