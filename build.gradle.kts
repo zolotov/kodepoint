@@ -4,8 +4,9 @@ plugins {
 }
 
 group = "me.zolotov.kodepoint"
+val unicodeVersion = providers.gradleProperty("kodepoint.unicodeVersion").get()
 description = """
-    Lightweight Unicode code-point APIs for Kotlin Multiplatform strings: code-point-safe iteration and indexing, character classification, case conversion, and Unicode script/category lookup across JVM, Android, Apple, JS, Wasm, and native targets – without depending on ICU.
+    Lightweight Unicode code-point APIs for Kotlin Multiplatform strings: code-point-safe iteration and indexing, character classification, case conversion, and Unicode script/category lookup across JVM, Android, Apple, JS, Wasm, and native targets – without depending on ICU. Backed by java.lang.Character on the JVM and by compact Unicode $unicodeVersion lookup tables everywhere else.
 """.trimIndent()
 
 subprojects {
