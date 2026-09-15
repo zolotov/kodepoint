@@ -14,3 +14,11 @@ dependencies {
     implementation("org.jetbrains.dokka:dokka-gradle-plugin:2.2.0")
     implementation("com.squareup:kotlinpoet:2.4.0")
 }
+
+dependencies {
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

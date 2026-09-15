@@ -27,7 +27,7 @@ fun parsedUnicodeData(
     parseSpecialCasing(specialCasingFile, characters)
     val scripts = parseScriptsFile(scriptsFile)
 
-    // Compute derived boolean properties from category and JVM Character class
+    // Compute derived boolean properties from category
     computeDerivedProperties(characters)
 
     return UnicodeData(characters = characters, scripts = scripts)
@@ -47,9 +47,9 @@ private fun computeDerivedProperties(characters: Array<CharacterData>) {
         char.isISOControl = cat == GeneralCategory.Cc
         char.isFormatChar = cat == GeneralCategory.Cf
 
-        // Get Java-specific properties directly from JVM Character class
-        char.isJavaIdentifierStart = Character.isJavaIdentifierStart(char.codepoint)
-        char.isJavaIdentifierPart = Character.isJavaIdentifierPart(char.codepoint)
+        // Java identifier rules, derived from the UCD category per the java.lang.Character contract
+        char.isJavaIdentifierStart = JavaIdentifierRules.isJavaIdentifierStart(cat)
+        char.isJavaIdentifierPart = JavaIdentifierRules.isJavaIdentifierPart(char.codepoint, cat)
     }
 }
 
