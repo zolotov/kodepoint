@@ -41,7 +41,6 @@ data class RangeValue(
  * Information about a Unicode plane for code generation.
  *
  * @property name Short name of the plane (e.g., "BMP", "SMP")
- * @property className Generated class name for this plane's character data
  * @property startCodepoint First codepoint in this plane's range
  * @property endCodepoint Last codepoint in this plane's range
  * @property sparse Whether to consider sparse (binary search) encoding for this plane.
@@ -54,7 +53,6 @@ data class RangeValue(
  */
 data class PlaneInfo(
     val name: String,
-    val className: String,
     val startCodepoint: Int,
     val endCodepoint: Int,
     val sparse: Boolean,

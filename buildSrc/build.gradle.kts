@@ -12,4 +12,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("com.vanniktech:gradle-maven-publish-plugin:0.37.0")
     implementation("org.jetbrains.dokka:dokka-gradle-plugin:2.2.0")
+    implementation("com.squareup:kotlinpoet:2.4.0")
 }

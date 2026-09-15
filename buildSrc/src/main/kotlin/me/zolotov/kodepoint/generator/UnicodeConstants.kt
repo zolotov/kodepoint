@@ -1,7 +1,7 @@
 package me.zolotov.kodepoint.generator
 
 const val UNICODE_VERSION = "16.0.0"
-const val UNICODE_BASE_URL = "https://www.unicode.org/Public/$UNICODE_VERSION/ucd/"
+const val UNICODE_BASE_URL = "https://www.unicode.org/Public/$UNICODE_VERSION/ucd"
 const val MAX_CODEPOINT = 0x10FFFF
 
 /**
@@ -9,10 +9,10 @@ const val MAX_CODEPOINT = 0x10FFFF
  * Note: BMP starts at 0x100 because Latin1 (0x00-0xFF) is handled by CharacterDataLatin1.
  */
 val PLANES = listOf(
-    PlaneInfo("BMP", "CharacterDataBMP", startCodepoint = 0x0100, endCodepoint = 0xFFFF, sparse = false),
-    PlaneInfo("SMP", "CharacterDataSMP", startCodepoint = 0x10000, endCodepoint = 0x1FFFF, sparse = true),
-    PlaneInfo("SIP", "CharacterDataSIP", startCodepoint = 0x20000, endCodepoint = 0x2FFFF, sparse = true),
-    PlaneInfo("SSP", "CharacterDataSSP", startCodepoint = 0x30000, endCodepoint = 0x10FFFF, sparse = true)
+    PlaneInfo("BMP", startCodepoint = 0x0100, endCodepoint = 0xFFFF, sparse = false),
+    PlaneInfo("SMP", startCodepoint = 0x10000, endCodepoint = 0x1FFFF, sparse = true),
+    PlaneInfo("SIP", startCodepoint = 0x20000, endCodepoint = 0x2FFFF, sparse = true),
+    PlaneInfo("SSP", startCodepoint = 0x30000, endCodepoint = 0x10FFFF, sparse = true)
 )
 
 /**

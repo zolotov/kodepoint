@@ -265,7 +265,7 @@ Unicode data tables are generated at build time from the Unicode Character Datab
    - Optimizes memory layout per plane
    - Deduplicates identical blocks
 
-5. **Generate Kotlin Code** via code generators in `buildSrc/src/main/kotlin/me/zolotov/kodepoint/generator/code/`
+5. **Generate Kotlin Code** via [KotlinPoet](https://square.github.io/kotlinpoet/)-based generators in `buildSrc/src/main/kotlin/me/zolotov/kodepoint/generator/code/`
 
 ### Generated Files
 
