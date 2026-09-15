@@ -14,6 +14,7 @@ import kotlin.test.fail
  * When both versions are equal the delta is empty and the comparison is strict.
  */
 class ValidationTest {
+    @OptIn(ExperimentalStdlibApi::class)
     companion object {
         private const val MAX_CODE_POINT = 0x10FFFF
         private const val VERTICAL_TILDA = 0x2E2F
@@ -21,8 +22,17 @@ class ValidationTest {
         private val WHITESPACE_JVM_ONLY = setOf(0x001C, 0x001D, 0x001E, 0x001F)
         private val WHITESPACE_UNICODE_ONLY = setOf(0x0085, 0x00A0, 0x2007, 0x202F)
 
+        private val CODEPOINT_HEX = HexFormat {
+            upperCase = true
+            number {
+                prefix = "U+"
+                removeLeadingZeros = true
+                minLength = 4
+            }
+        }
+
         private fun formatCodepoint(codepoint: Int): String {
-            val hex = "U+${codepoint.toString(16).uppercase().padStart(4, '0')}"
+            val hex = codepoint.toHexString(CODEPOINT_HEX)
             return "$hex [https://www.compart.com/en/unicode/$hex]"
         }
     }

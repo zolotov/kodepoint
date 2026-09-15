@@ -65,12 +65,20 @@ fun generateUcdDiff(from: UnicodeVersion, to: UnicodeVersion, cacheDir: Path, ou
     println("UCD diff $from -> $to: $total changed (property, codepoint) pairs written to $output")
 }
 
+private val CODEPOINT_HEX = HexFormat {
+    upperCase = true
+    number {
+        removeLeadingZeros = true
+        minLength = 4
+    }
+}
+
 fun UcdDiff.toText(): String = buildString {
     appendLine("# UCD diff: $from -> $to")
     appendLine("# <property> <codepoint>: values differ between the two releases")
     for ((property, codepoints) in changes) {
         for (cp in codepoints) {
-            append(property).append(' ').appendLine(cp.toString(16).uppercase().padStart(4, '0'))
+            append(property).append(' ').appendLine(cp.toHexString(CODEPOINT_HEX))
         }
     }
 }
