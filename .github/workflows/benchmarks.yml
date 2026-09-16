@@ -67,47 +67,67 @@ jobs:
           # green while the benchmark job queues forever against a runner that never
           # appears — and a runner offline for 14 days is deregistered by GitHub.
           # Starting an already-running instance is a no-op, so this is safe every run.
-          op=$(curl -sSf -X POST \
-            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-            -H "Content-Length: 0" \
-            "https://compute.googleapis.com/compute/v1/${INSTANCE_PATH}/start")
+          #
+          # A stopped VM holds no capacity, so every start is a fresh placement request,
+          # and the machine family is scarce: zone stockouts are routine and usually
+          # clear within a minute or two. Retry those for a while before giving up;
+          # any other error is a real failure and fails immediately.
+          # Never fall back to a GitHub-hosted runner: its numbers are too noisy to
+          # compare against the trend baseline, so a bad run is worse than no run.
+          retry_seconds=900
+          retry_delay=30
+          deadline=$(( $(date +%s) + retry_seconds ))
+          attempt=0
 
-          op_url=$(printf '%s' "$op" | jq -r '.selfLink // empty')
-          if [ -z "$op_url" ]; then
-            echo "::error::Start request returned no operation link: ${op}"
-            exit 1
-          fi
+          while :; do
+            attempt=$(( attempt + 1 ))
 
-          for _ in $(seq 60); do
-            [ "$(printf '%s' "$op" | jq -r '.status')" = "DONE" ] && break
-            sleep 5
-            op=$(curl -sSf -H "Authorization: Bearer ${ACCESS_TOKEN}" "$op_url")
-          done
+            op=$(curl -sSf -X POST \
+              -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+              -H "Content-Length: 0" \
+              "https://compute.googleapis.com/compute/v1/${INSTANCE_PATH}/start")
 
-          status=$(printf '%s' "$op" | jq -r '.status')
-          code=$(printf '%s' "$op" | jq -r '.error.errors[0].code // empty')
-          msg=$(printf '%s' "$op" | jq -r '.error.errors[0].message // empty')
+            op_url=$(printf '%s' "$op" | jq -r '.selfLink // empty')
+            if [ -z "$op_url" ]; then
+              echo "::error::Start request returned no operation link: ${op}"
+              exit 1
+            fi
 
-          if [ "$status" != "DONE" ]; then
-            echo "::error::Timed out waiting for ${INSTANCE_PATH} to start."
-            exit 1
-          fi
+            for _ in $(seq 60); do
+              [ "$(printf '%s' "$op" | jq -r '.status')" = "DONE" ] && break
+              sleep 5
+              op=$(curl -sSf -H "Authorization: Bearer ${ACCESS_TOKEN}" "$op_url")
+            done
 
-          if [ -n "$code" ]; then
-            # Never fall back to a GitHub-hosted runner: its numbers are too noisy to
-            # compare against the trend baseline, so a bad run is worse than no run.
+            status=$(printf '%s' "$op" | jq -r '.status')
+            code=$(printf '%s' "$op" | jq -r '.error.errors[0].code // empty')
+            msg=$(printf '%s' "$op" | jq -r '.error.errors[0].message // empty')
+
+            if [ "$status" != "DONE" ]; then
+              echo "::error::Timed out waiting for ${INSTANCE_PATH} to start."
+              exit 1
+            fi
+
+            if [ -z "$code" ]; then
+              echo "Started ${INSTANCE_PATH} (attempt ${attempt})."
+              exit 0
+            fi
+
             case "$code" in
               *RESOURCE_POOL_EXHAUSTED*)
-                echo "::error::GCE has no capacity for the runner in its zone (${code}): ${msg} This is a zone stockout, not a misconfiguration — move the instance to a zone with capacity."
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "::error::GCE had no capacity for the runner in its zone for ${retry_seconds}s (${code}): ${msg} Re-run the job later; if this keeps happening, move the instance to a zone with capacity or to a less scarce machine type."
+                  exit 1
+                fi
+                echo "No capacity in zone (attempt ${attempt}): ${msg} Retrying in ${retry_delay}s."
+                sleep "$retry_delay"
                 ;;
               *)
                 echo "::error::Starting ${INSTANCE_PATH} failed (${code}): ${msg}"
+                exit 1
                 ;;
             esac
-            exit 1
-          fi
-
-          echo "Started ${INSTANCE_PATH}."
+          done
 
   benchmark:
     name: Run Benchmarks
