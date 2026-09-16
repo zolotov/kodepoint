@@ -14,7 +14,7 @@ kotlin {
     }
 }
 
-val generateUnicodeScript by tasks.registering {
+val generateUnicodeScript = tasks.register("generateUnicodeScript") {
     val unicodeVersion = providers.gradleProperty("kodepoint.unicodeVersion")
     val outputDir = layout.buildDirectory.dir("generated/sources/unicode-script")
     val cacheDir = layout.buildDirectory.dir("unicode-cache")

@@ -23,7 +23,7 @@ kotlin {
     }
 }
 
-val generateUnicodeData by tasks.registering {
+val generateUnicodeData = tasks.register("generateUnicodeData") {
     val unicodeVersion = providers.gradleProperty("kodepoint.unicodeVersion")
     val outputDir = layout.buildDirectory.dir("generated/sources/unicode-data")
     val cacheDir = layout.buildDirectory.dir("unicode-cache")
@@ -43,7 +43,7 @@ val generateUnicodeData by tasks.registering {
     }
 }
 
-val generateUcdDiff by tasks.registering {
+val generateUcdDiff = tasks.register("generateUcdDiff") {
     description = "Write the UCD delta between the toolchain JDK's Unicode version and the tables' version for ValidationTest."
     val tablesVersion = providers.gradleProperty("kodepoint.unicodeVersion")
     val jvmVersion = providers.gradleProperty("kodepoint.jvmUnicodeVersion")
