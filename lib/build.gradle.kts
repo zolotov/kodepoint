@@ -9,7 +9,7 @@ kotlin {
                 implementation(project(":common"))
             }
         }
-        val nonJvmMain by getting {
+        named("nonJvmMain") {
             dependencies {
                 implementation(project(":unicode"))
             }
