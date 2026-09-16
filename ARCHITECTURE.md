@@ -284,10 +284,12 @@ Output to `unicode/build/generated/sources/unicode-data/`:
 for all 1,114,112 codepoints. The tables follow `kodepoint.unicodeVersion`, while `Character` follows the
 toolchain JDK, whose Unicode release is declared as `kodepoint.jvmUnicodeVersion` in `gradle.properties`.
 
-`:unicode:generateUcdDiff` parses both UCD releases and writes the per-property delta between them
-(`build/generated/resources/ucd-diff/ucd-diff.txt`) into the test resources. Each test then requires its
-mismatches to equal that delta exactly: an unexplained mismatch is a table bug, a delta entry the tables
-did not reproduce is a stale or mis-generated table. With equal versions the delta is empty and the
+`:unicode:generateUcdDiff` parses both UCD releases and writes the per-property delta between them, with
+each release's value at every changed codepoint (`build/generated/resources/ucd-diff/ucd-diff.txt`), into
+the test resources. Each test then requires its mismatches to equal that delta exactly, values included:
+an unexplained mismatch is a table bug, a delta entry the tables did not reproduce is a stale or
+mis-generated table, a table value other than the newer release's is a wrong table entry, and a JVM value
+other than the older release's means `kodepoint.jvmUnicodeVersion` misdeclares the toolchain JDK. With equal versions the delta is empty and the
 comparison is strict, so upgrading the tables ahead of the JDK is a one-line change plus a review of the diff.
 
 ## Unicode Script Handling

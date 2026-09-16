@@ -9,9 +9,11 @@ import kotlin.test.fail
  *
  * The tables and the JDK may implement different Unicode releases. The build writes the
  * UCD delta between them (`ucd-diff.txt`, from `kodepoint.jvmUnicodeVersion` to
- * `kodepoint.unicodeVersion`), and every test requires its mismatches to be exactly that
- * delta: nothing the delta doesn't explain, and nothing in the delta the tables missed.
- * When both versions are equal the delta is empty and the comparison is strict.
+ * `kodepoint.unicodeVersion`, with the value of each release at every changed codepoint),
+ * and every test requires its mismatches to be exactly that delta: nothing the delta doesn't
+ * explain, nothing in the delta the tables missed, and at each changed codepoint the JVM
+ * returning the old release's value and the tables the new one's. When both versions are
+ * equal the delta is empty and the comparison is strict.
  */
 class ValidationTest {
     @OptIn(ExperimentalStdlibApi::class)
@@ -25,16 +27,19 @@ class ValidationTest {
         private val CODEPOINT_HEX = HexFormat {
             upperCase = true
             number {
-                prefix = "U+"
                 removeLeadingZeros = true
                 minLength = 4
             }
         }
 
         private fun formatCodepoint(codepoint: Int): String {
-            val hex = codepoint.toHexString(CODEPOINT_HEX)
+            val hex = "U+" + codepoint.toHexString(CODEPOINT_HEX)
             return "$hex [https://www.compart.com/en/unicode/$hex]"
         }
+
+        /** Renders an observed result the way the generator renders UCD values in `ucd-diff.txt`. */
+        private fun canonical(value: Any): String =
+            if (value is Int) value.toHexString(CODEPOINT_HEX) else value.toString()
     }
 
     @Test
@@ -108,8 +113,11 @@ class ValidationTest {
         { CharCategory.valueOf(Character.getType(it)).code }
     )
 
-    /** Per test name, the codepoints whose value changed between the JDK's and the tables' Unicode release. */
-    private val expectedDiff: Map<String, Set<Int>>
+    /** The value a changed codepoint has in the JDK's release ([jvm]) and in the tables' release ([multiplatform]). */
+    private data class ExpectedChange(val jvm: String, val multiplatform: String)
+
+    /** Per test name and codepoint, the change between the JDK's and the tables' Unicode release. */
+    private val expectedDiff: Map<String, Map<Int, ExpectedChange>>
     private val diffDescription: String
 
     init {
@@ -120,8 +128,8 @@ class ValidationTest {
         expectedDiff = lines
             .filter { it.isNotBlank() && !it.startsWith("#") }
             .map { it.split(' ') }
-            .groupBy({ it[0] }, { it[1].toInt(16) })
-            .mapValues { it.value.toSet() }
+            .groupBy({ it[0] }, { it[1].toInt(16) to ExpectedChange(jvm = it[2], multiplatform = it[3]) })
+            .mapValues { it.value.toMap() }
     }
 
     private data class Mismatch(
@@ -143,8 +151,17 @@ class ValidationTest {
             }
         }
         val expected = expectedDiff[name].orEmpty()
+        val observed = mismatches.associateBy { it.codepoint }
         val unexpected = mismatches.filter { it.codepoint !in expected }
-        val missing = expected - mismatches.map { it.codepoint }.toSet()
+        val missing = expected.keys - observed.keys
+        // A changed codepoint may disagree with the JVM and still be wrong: the tables must hold the
+        // new release's value, and the JVM must hold the old one (else jvmUnicodeVersion is misdeclared).
+        val wrongTables = expected.mapNotNull { (cp, change) ->
+            observed[cp]?.takeIf { canonical(it.multiplatform) != change.multiplatform }?.let { it to change }
+        }
+        val wrongJvm = expected.mapNotNull { (cp, change) ->
+            observed[cp]?.takeIf { canonical(it.jvm) != change.jvm }?.let { it to change }
+        }
 
         val message = buildString {
             if (unexpected.isNotEmpty()) {
@@ -154,6 +171,14 @@ class ValidationTest {
             if (missing.isNotEmpty()) {
                 appendLine("$name: ${missing.size} codepoints changed in the $diffDescription but the tables agree with the JVM")
                 appendSample(missing.sorted()) { formatCodepoint(it) }
+            }
+            if (wrongTables.isNotEmpty()) {
+                appendLine("$name: ${wrongTables.size} codepoints where the tables disagree with the newer UCD release of the $diffDescription")
+                appendSample(wrongTables) { (m, change) -> "${formatCodepoint(m.codepoint)}: expected ${change.multiplatform}, multiplatform=${canonical(m.multiplatform)}" }
+            }
+            if (wrongJvm.isNotEmpty()) {
+                appendLine("$name: ${wrongJvm.size} codepoints where the JVM disagrees with the older UCD release of the $diffDescription (is kodepoint.jvmUnicodeVersion right?)")
+                appendSample(wrongJvm) { (m, change) -> "${formatCodepoint(m.codepoint)}: expected ${change.jvm}, jvm=${canonical(m.jvm)}" }
             }
         }
         if (message.isNotEmpty()) {
