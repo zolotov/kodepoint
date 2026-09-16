@@ -51,11 +51,9 @@ Kodepoint is published to Maven Central. Add it to your `commonMain` dependencie
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("me.zolotov.kodepoint:kodepoint:$version")
+    implementation("me.zolotov.kodepoint:kodepoint:2.0.0")
 }
 ```
-
-> Replace `$version` with the latest release shown in the [badge above](#kodepoint) or on [Maven Central](https://search.maven.org/artifact/me.zolotov.kodepoint/kodepoint).
 
 ## Quick start
 
@@ -258,6 +256,8 @@ Benchmark results – including history and comparisons against `java.lang.Chara
 # Run tests
 ./gradlew allTests
 ```
+
+Releases and the changelog workflow are described in [RELEASING.md](RELEASING.md).
 
 ## Contributing
 

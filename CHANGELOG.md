@@ -1,53 +1,70 @@
 # Change Log
 
-## [2.0.0](https://github.com/zolotov/kodepoint/tree/2.0.0) (2026-07-20)
-[View commits](https://github.com/zolotov/kodepoint/compare/1.0.1...2.0.0)
+## [Unreleased]
 
-**Merged pull requests:**
+## [2.0.0] - 2026-07-20
 
-- Ascii props [\#66](https://github.com/zolotov/kodepoint/pull/66) ([@zolotov](https://github.com/zolotov))
-- Inferred bits [\#65](https://github.com/zolotov/kodepoint/pull/65) ([@zolotov](https://github.com/zolotov))
-- Include PR benchmark reports to dashboard [\#73](https://github.com/zolotov/kodepoint/pull/73) ([@zolotov](https://github.com/zolotov))
-- Introduce Codepoint.getCategory\(\) [\#64](https://github.com/zolotov/kodepoint/pull/64) ([@zolotov](https://github.com/zolotov))
-- Add more comparison benchmarks [\#63](https://github.com/zolotov/kodepoint/pull/63) ([@zolotov](https://github.com/zolotov))
-- Fast\-path for ascii codepoints [\#49](https://github.com/zolotov/kodepoint/pull/49) ([@zolotov](https://github.com/zolotov))
-- Implement own benchmark shell [\#55](https://github.com/zolotov/kodepoint/pull/55) ([@zolotov](https://github.com/zolotov))
-- Add CharacterData size metrics for Bencher [\#48](https://github.com/zolotov/kodepoint/pull/48) ([@zolotov](https://github.com/zolotov))
-- Get rid of coroutine\-based iterator to optimize codepoints iteration [\#47](https://github.com/zolotov/kodepoint/pull/47) ([@zolotov](https://github.com/zolotov))
-- Optimize codepoint to string conversion [\#37](https://github.com/zolotov/kodepoint/pull/37) ([@zolotov](https://github.com/zolotov))
-- Introduce text api benchmarks [\#36](https://github.com/zolotov/kodepoint/pull/36) ([@zolotov](https://github.com/zolotov))
-- Benchmarks [\#35](https://github.com/zolotov/kodepoint/pull/35) ([@zolotov](https://github.com/zolotov))
-- CodeQL action failure [\#15](https://github.com/zolotov/kodepoint/pull/15) ([@zolotov](https://github.com/zolotov))
-- WasmWasi target support [\#12](https://github.com/zolotov/kodepoint/pull/12) ([@zolotov](https://github.com/zolotov))
-- CodeQL action failure [\#13](https://github.com/zolotov/kodepoint/pull/13) ([@zolotov](https://github.com/zolotov))
+### Added
 
-**Upgraded dependencies:**
+- `Codepoint.getCategory()` returns the Unicode general category as the new `Category` enum
+  (`UPPERCASE_LETTER`, `DECIMAL_DIGIT_NUMBER`, …). Unassigned code points and values outside the
+  Unicode range return `Category.UNASSIGNED`. On the JVM it matches `Character.getType()`.
+  ([#64](https://github.com/zolotov/kodepoint/pull/64))
+- `Appendable.appendCodePoint(Int)` overload, so a raw code point can be appended without wrapping
+  it in a `Codepoint` first.
+- `wasmWasi` target, for WASI runtimes such as Cloudflare Workers, Fastly Compute and Fermyon Spin.
+  It uses the same generated lookup tables as the other non-JVM targets.
+  ([#12](https://github.com/zolotov/kodepoint/pull/12))
 
-- Bump org.jetbrains.kotlinx:kotlinx\-serialization\-json from 1.8.1 to 1.11.0 [\#68](https://github.com/zolotov/kodepoint/pull/68) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump gradle\-wrapper from 9.5.0 to 9.6.1 [\#46](https://github.com/zolotov/kodepoint/pull/46) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump com.vanniktech:gradle\-maven\-publish\-plugin from 0.36.0 to 0.37.0 [\#40](https://github.com/zolotov/kodepoint/pull/40) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.jetbrains.kotlinx.benchmark from 0.4.16 to 0.4.17 [\#33](https://github.com/zolotov/kodepoint/pull/33) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.jetbrains.kotlinx:kotlinx\-benchmark\-runtime from 0.4.16 to 0.4.17 [\#32](https://github.com/zolotov/kodepoint/pull/32) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump gradle\-wrapper from 9.4.1 to 9.5.0 [\#31](https://github.com/zolotov/kodepoint/pull/31) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.jetbrains.kotlinx:kotlinx\-benchmark\-runtime from 0.4.15 to 0.4.16 [\#17](https://github.com/zolotov/kodepoint/pull/17) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.jetbrains.dokka:dokka\-gradle\-plugin from 2.1.0 to 2.2.0 [\#27](https://github.com/zolotov/kodepoint/pull/27) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump gradle\-wrapper from 9.3.1 to 9.4.1 [\#24](https://github.com/zolotov/kodepoint/pull/24) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.jetbrains.kotlinx.benchmark from 0.4.15 to 0.4.16 [\#19](https://github.com/zolotov/kodepoint/pull/19) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump gradle\-wrapper from 9.3.0 to 9.3.1 [\#16](https://github.com/zolotov/kodepoint/pull/16) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump gradle\-wrapper from 9.2.1 to 9.3.0 [\#14](https://github.com/zolotov/kodepoint/pull/14) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump com.vanniktech:gradle\-maven\-publish\-plugin from 0.35.0 to 0.36.0 [\#11](https://github.com/zolotov/kodepoint/pull/11) ([@dependabot[bot]](https://github.com/apps/dependabot))
+### Performance
 
-## [1.0.1](https://github.com/zolotov/kodepoint/tree/1.0.1) (2026-01-14)
-[View commits](https://github.com/zolotov/kodepoint/compare/1.0.0...1.0.1)
+- `CharSequence.codepoints()` iterators are plain index-advancing iterators instead of
+  coroutine-based `iterator { }` builders, removing the per-element suspension and allocation.
+  ([#47](https://github.com/zolotov/kodepoint/pull/47))
+- Every classification and case-conversion function short-circuits for ASCII input with a single
+  flag-table lookup, without consulting the Unicode property tables.
+  ([#49](https://github.com/zolotov/kodepoint/pull/49),
+  [#66](https://github.com/zolotov/kodepoint/pull/66))
+- On non-JVM targets `isLetter()`, `isDigit()`, `isUpperCase()`, `isLowerCase()` and `isSpaceChar()`
+  test one precomputed bit of the property word instead of decoding the general category, and BMP
+  lookups take one branch fewer. ([#65](https://github.com/zolotov/kodepoint/pull/65))
+- `Codepoint.asString()` builds the string directly from the one or two UTF-16 units instead of
+  going through a vararg conversion. ([#37](https://github.com/zolotov/kodepoint/pull/37))
 
+## [1.0.1] - 2026-01-14
 
-## [1.0.0](https://github.com/zolotov/kodepoint/tree/1.0.0) (2026-01-13)
-[View commits](https://github.com/zolotov/kodepoint/compare/328f0dac614a64a62b8db4fbcdff8361223f36dd...1.0.0)
+### Fixed
 
-**Merged pull requests:**
+- `CharSequence.codePointBefore(index)` threw `IndexOutOfBoundsException` for `index == length`,
+  so the last code point of a string could not be read. The exception message now names the
+  offending index.
 
-- Add native and js targets [\#5](https://github.com/zolotov/kodepoint/pull/5) ([@zolotov](https://github.com/zolotov))
-- Bump org.jetbrains.dokka:dokka\-gradle\-plugin from 2.0.0 to 2.1.0 [\#4](https://github.com/zolotov/kodepoint/pull/4) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump plugin.allopen from 2.0.20 to 2.3.0 [\#3](https://github.com/zolotov/kodepoint/pull/3) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump com.vanniktech:gradle\-maven\-publish\-plugin from 0.34.0 to 0.35.0 [\#1](https://github.com/zolotov/kodepoint/pull/1) ([@dependabot[bot]](https://github.com/apps/dependabot))
-- Bump org.gradle.toolchains.foojay\-resolver\-convention from 0.9.0 to 1.0.0 [\#2](https://github.com/zolotov/kodepoint/pull/2) ([@dependabot[bot]](https://github.com/apps/dependabot))
+## [1.0.0] - 2026-01-13
+
+Initial release.
+
+### Added
+
+- `Codepoint`, a `@JvmInline value class` over an `Int` code point, with `java.lang.Character`-style
+  queries in Kotlin common code: `isLetter()`, `isDigit()`, `isLetterOrDigit()`, `isUpperCase()`,
+  `isLowerCase()`, `isSpaceChar()`, `isWhitespace()`, `isIdeographic()`, `isISOControl()`,
+  `isIdentifierIgnorable()`, `isUnicodeIdentifierStart()`, `isUnicodeIdentifierPart()`,
+  `isJavaIdentifierStart()`, `isJavaIdentifierPart()`, `toUpperCase()`, `toLowerCase()`,
+  `getUnicodeScript()`, `asString()`, `charCount`, and `Codepoint.fromChars(high, low)`.
+- `UnicodeScript` enum covering all scripts of Unicode 16.0.0.
+- Surrogate-safe `CharSequence` extensions: `forEachCodepoint { }`, `forEachCodepointReversed { }`,
+  `codePointAt(index)`, `codePointBefore(index)` and `codepoints(offset, direction)`.
+- `Appendable.appendCodePoint(Codepoint)`, writing a surrogate pair for supplementary code points.
+- Targets: JVM (bytecode 11), JS, WasmJS, iOS, macOS, tvOS, watchOS, Linux x64/arm64 and Windows
+  x64, from a single `commonMain` API. Kotlin API and language version 2.1; Kotlin 2.2.20 so
+  WasmJS consumers are not forced onto 2.3.0. No runtime dependencies.
+- On the JVM every query delegates to `java.lang.Character`; elsewhere it uses compact generated
+  Unicode 16.0.0 lookup tables, validated against `java.lang.Character` for all 1,114,112 code
+  points. Two deliberate deviations follow the Unicode standard instead of the JVM:
+  `isWhitespace()` uses the `White_Space` property (no-break spaces are whitespace, U+001C–U+001F
+  are not), and `isUnicodeIdentifierStart()`/`Part()` exclude U+2E2F VERTICAL TILDE.
+
+[Unreleased]: https://github.com/zolotov/kodepoint/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/zolotov/kodepoint/compare/1.0.1...2.0.0
+[1.0.1]: https://github.com/zolotov/kodepoint/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/zolotov/kodepoint/commits/1.0.0

@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     permissions:
+      # Push the changelog commit and create the GitHub release
       contents: write
     env:
       VERSION: ${{ inputs.version }}
@@ -38,6 +39,13 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Do not leave a contents: write credential in .git/config for the whole job.
+          # The Publish step below runs arbitrary build logic and third-party Gradle
+          # plugins alongside the GPG signing key and the Maven Central credentials; a
+          # persisted token would be readable by any of them. The changelog push
+          # authenticates explicitly instead.
+          persist-credentials: false
 
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -48,9 +56,27 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
 
+      # Runs before publishing so a missing or unedited changelog aborts the release while it is
+      # still reversible: patchChangelog fails with MissingReleaseNoteException when the
+      # "Unreleased" section is empty, because the build sets patchEmpty = false.
+      #
+      # Nothing here generates release notes. patchChangelog only promotes the hand-written
+      # "Unreleased" section to a version section, and getChangelog copies that same text out for
+      # the GitHub release, so what ships is exactly what was reviewed.
+      #
+      # The two tasks need separate invocations: the plugin parses CHANGELOG.md once at
+      # configuration time and shares that snapshot between tasks, so a getChangelog in the same
+      # invocation would still see the unpatched file and fail on the missing version.
+      - name: Promote the Unreleased changelog section and stamp the docs
+        shell: bash
+        run: ./gradlew patchChangelog updateReadmeVersion "-Pversion=$VERSION" --no-configuration-cache
+
+      - name: Extract the release notes
+        shell: bash
+        run: ./gradlew getChangelog "--project-version=$VERSION" --no-header --no-empty-sections "-Pversion=$VERSION" --no-configuration-cache
+
       - name: Publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_ASCII_ARMORED }}
@@ -61,18 +87,23 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_TOKEN_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_TOKEN_PASSWORD }}
         shell: bash
-        run: ./gradlew check generateChangelog publishAndReleaseToMavenCentral "-Pversion=$VERSION" --no-configuration-cache
+        run: ./gradlew check publishAndReleaseToMavenCentral "-Pversion=$VERSION" --no-configuration-cache
 
       - name: Commit and push change log
         id: changelog-commit
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          git add CHANGELOG.md
+
+          git add CHANGELOG.md README.md llms.txt
           git commit -m "Version $VERSION"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          # The checkout intentionally persists no credentials, so authenticate this one
+          # push explicitly. Actions masks GITHUB_TOKEN in logs.
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:${GITHUB_REF_NAME}"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create release and tag
