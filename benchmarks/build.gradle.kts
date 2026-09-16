@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.allopen") version "2.2.20"
+    kotlin("plugin.allopen") version "2.4.20"
     id("org.jetbrains.kotlinx.benchmark") version "0.5.0"
 }
 
