@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Breaking
+
+- `UnicodeScript` gains four constants for the scripts new in Unicode 17.0.0: `BERIA_ERFE`,
+  `SIDETIC`, `TAI_YO` and `TOLONG_SIKI`. An exhaustive `when` over the enum needs new branches or an
+  `else`. ([#116](https://github.com/zolotov/kodepoint/pull/116))
+
+### Changed
+
+- The lookup tables used on non-JVM targets follow Unicode 17.0.0 instead of 16.0.0. That assigns
+  4,803 new characters: mostly CJK Unified Ideographs Extension J (4,321) and Tangut (145), the
+  four new scripts Beria Erfe, Sidetic, Tai Yo and Tolong Siki, and additions to Arabic, Sharada,
+  Latin, Telugu and Kannada. U+0295 LATIN LETTER PHARYNGEAL VOICED FRICATIVE ʕ is now
+  `OTHER_LETTER` instead of `LOWERCASE_LETTER`, `toUpperCase()`/`toLowerCase()` map 28 new Latin
+  and Beria Erfe case pairs, and `isDigit()` accepts the ten Tolong Siki digits U+11DE0–U+11DE9.
+  On the JVM every query still delegates to `java.lang.Character`, so results there follow the
+  JDK's Unicode version (16.0.0 on JDK 24 and 25) and differ from the other targets by exactly this
+  delta until a JDK ships Unicode 17. ([#116](https://github.com/zolotov/kodepoint/pull/116))
+
 ## [2.0.0] - 2026-07-20
 
 ### Added
