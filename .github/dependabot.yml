@@ -14,3 +14,11 @@ updates:
       interval: "daily"
     labels:
       - dependencies
+    ignore:
+      # The Kotlin version this library is built with is the compatibility floor for every non-JVM
+      # consumer: klibs produced by Kotlin N cannot be read by compilers older than N. Bumping it is a
+      # breaking change, so it is done by hand and recorded in CHANGELOG.md, never by dependabot.
+      - dependency-name: "org.jetbrains.kotlin:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "org.jetbrains.kotlin.plugin.allopen"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

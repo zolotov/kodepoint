@@ -172,6 +172,7 @@ A `value class` wrapping an `Int` code point.
 |---------------------------------|--------------------------------------------------------------------------------------|
 | **Unicode version**             | 16.0.0                                                                               |
 | **Kotlin API/language version** | 2.1+                                                                                 |
+| **Minimum consumer Kotlin**     | 2.1 on the JVM, 2.2 for all other targets (built with Kotlin 2.2.20)                 |
 | **JVM bytecode target**         | 11                                                                                   |
 | **Correctness**                 | Non-JVM output validated against `java.lang.Character` for all 1,114,112 code points |
 | **Runtime dependencies**        | None                                                                                 |
