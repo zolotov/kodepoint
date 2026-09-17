@@ -2,28 +2,43 @@
 
 ## [Unreleased]
 
+### Breaking
+
+- `UnicodeScript` gains three constants for the scripts new in Unicode 18.0.0: `JURCHEN`,
+  `PROTO_CUNEIFORM` and `SEAL`. An exhaustive `when` over the enum needs new branches or an
+  `else`.
+
+### Changed
+
+- The lookup tables used on non-JVM targets follow Unicode 18.0.0 instead of 17.0.0. That assigns
+  13,007 new characters: mostly Seal (11,328) and Jurchen (965), the new Proto-Cuneiform script
+  (164), and additions to Latin (161), Cuneiform (159), Arabic, Katakana, Khitan Small Script and
+  Armenian. `toUpperCase()`/`toLowerCase()` map 20 new Latin case pairs (U+0277/U+A7DD,
+  U+027C/U+A7E2, U+AB4B/U+AB6C, U+AB4C/U+AB6D and Latin Extended-G U+1DF40–U+1DF7F). No existing
+  character changed category and no new decimal digits were added. On the JVM every query still
+  delegates to `java.lang.Character`, so results there follow the JDK's Unicode version (16.0.0 on
+  JDK 24 and 25) and differ from the other targets by the 16.0 → 18.0 delta until a JDK ships
+  Unicode 18.
+
 ## [3.0.0] - 2026-09-16
 
 ### Breaking
 
-- `UnicodeScript` gains seven constants for the scripts new in Unicode 17.0.0 and 18.0.0:
-  `BERIA_ERFE`, `SIDETIC`, `TAI_YO`, `TOLONG_SIKI`, `JURCHEN`, `PROTO_CUNEIFORM` and `SEAL`. An
-  exhaustive `when` over the enum needs new branches or an `else`.
-  ([#116](https://github.com/zolotov/kodepoint/pull/116), TODO: PR for the 18.0.0 update)
+- `UnicodeScript` gains four constants for the scripts new in Unicode 17.0.0: `BERIA_ERFE`,
+  `SIDETIC`, `TAI_YO` and `TOLONG_SIKI`. An exhaustive `when` over the enum needs new branches or an
+  `else`. ([#116](https://github.com/zolotov/kodepoint/pull/116))
 
 ### Changed
 
-- The lookup tables used on non-JVM targets follow Unicode 18.0.0 instead of 16.0.0. That assigns
-  17,810 new characters: mostly Seal (11,328), CJK Unified Ideographs Extension J (4,321) and
-  Jurchen (965), the new scripts Beria Erfe, Sidetic, Tai Yo, Tolong Siki and Proto-Cuneiform, and
-  additions to Latin, Cuneiform, Tangut, Arabic, Sharada, Katakana, Khitan Small Script and
-  Armenian. U+0295 LATIN LETTER PHARYNGEAL VOICED FRICATIVE ʕ is now `OTHER_LETTER` instead of
-  `LOWERCASE_LETTER`, `toUpperCase()`/`toLowerCase()` map 48 new Latin and Beria Erfe case pairs,
-  and `isDigit()` accepts the ten Tolong Siki digits U+11DE0–U+11DE9. On the JVM every query still
-  delegates to `java.lang.Character`, so results there follow the JDK's Unicode version (16.0.0 on
-  JDK 24 and 25) and differ from the other targets by exactly this delta until a JDK ships
-  Unicode 18. ([#116](https://github.com/zolotov/kodepoint/pull/116), TODO: PR for the 18.0.0
-  update)
+- The lookup tables used on non-JVM targets follow Unicode 17.0.0 instead of 16.0.0. That assigns
+  4,803 new characters: mostly CJK Unified Ideographs Extension J (4,321) and Tangut (145), the
+  four new scripts Beria Erfe, Sidetic, Tai Yo and Tolong Siki, and additions to Arabic, Sharada,
+  Latin, Telugu and Kannada. U+0295 LATIN LETTER PHARYNGEAL VOICED FRICATIVE ʕ is now
+  `OTHER_LETTER` instead of `LOWERCASE_LETTER`, `toUpperCase()`/`toLowerCase()` map 28 new Latin
+  and Beria Erfe case pairs, and `isDigit()` accepts the ten Tolong Siki digits U+11DE0–U+11DE9.
+  On the JVM every query still delegates to `java.lang.Character`, so results there follow the
+  JDK's Unicode version (16.0.0 on JDK 24 and 25) and differ from the other targets by exactly this
+  delta until a JDK ships Unicode 17. ([#116](https://github.com/zolotov/kodepoint/pull/116))
 
 ## [2.0.0] - 2026-07-20
 
