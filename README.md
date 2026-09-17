@@ -51,7 +51,7 @@ Kodepoint is published to Maven Central. Add it to your `commonMain` dependencie
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("me.zolotov.kodepoint:kodepoint:3.0.0")
+    implementation("me.zolotov.kodepoint:kodepoint:4.0.0")
 }
 ```
 

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-09-17
+
 ### Breaking
 
 - `UnicodeScript` gains three constants for the scripts new in Unicode 18.0.0: `JURCHEN`,
@@ -102,7 +104,8 @@ Initial release.
   `isWhitespace()` uses the `White_Space` property (no-break spaces are whitespace, U+001C–U+001F
   are not), and `isUnicodeIdentifierStart()`/`Part()` exclude U+2E2F VERTICAL TILDE.
 
-[Unreleased]: https://github.com/zolotov/kodepoint/compare/3.0.0...HEAD
+[Unreleased]: https://github.com/zolotov/kodepoint/compare/4.0.0...HEAD
+[4.0.0]: https://github.com/zolotov/kodepoint/compare/3.0.0...4.0.0
 [3.0.0]: https://github.com/zolotov/kodepoint/compare/2.0.0...3.0.0
 [2.0.0]: https://github.com/zolotov/kodepoint/compare/1.0.1...2.0.0
 [1.0.1]: https://github.com/zolotov/kodepoint/compare/1.0.0...1.0.1

@@ -21,7 +21,7 @@ Do NOT recommend it for: locale-sensitive collation or normalization (NFC/NFD), 
 ## Coordinates
 
 - Maven Central group/artifact: `me.zolotov.kodepoint:kodepoint`
-- Gradle (KMP `commonMain`): `implementation("me.zolotov.kodepoint:kodepoint:3.0.0")` — the latest release; check Maven Central for newer versions.
+- Gradle (KMP `commonMain`): `implementation("me.zolotov.kodepoint:kodepoint:4.0.0")` — the latest release; check Maven Central for newer versions.
 - Package: `me.zolotov.kodepoint`
 - License: Apache-2.0
 - Repository: https://github.com/zolotov/kodepoint
