@@ -21,7 +21,7 @@ Kotlin's common standard library has no equivalent of Java's `Character`. In sha
 
 Kodepoint fills that gap:
 
-- **📦 Works everywhere** – one API across JVM, JS, WasmJS, iOS, macOS, watchOS, tvOS, Linux, and Windows. Write your text logic once in `commonMain`.
+- **📦 Works everywhere** – one API across JVM, JS, WasmJS, WasmWasi, iOS, macOS, watchOS, tvOS, Linux, and Windows. Write your text logic once in `commonMain`.
 - **🧩 Full Unicode range** – first-class support for supplementary code points and surrogate pairs, so 😀 and 𝕏 are handled correctly.
 - **⚡ Zero-allocation** – `Codepoint` is a `@JvmInline value class` wrapping a single `Int`. No boxing, no wrapper objects on the hot path.
 - **✅ JVM-validated correctness** – non-JVM results are checked against `java.lang.Character` across **all 1,114,112 code points** (see [JVM Compatibility](#jvm-compatibility)).
@@ -183,6 +183,7 @@ A `value class` wrapping an `Int` code point.
 |------------|-------------------------------------------------------|
 | JVM        | `jvm`                                                 |
 | JavaScript | `js`, `wasmJs`                                        |
+| WASI       | `wasmWasi`                                            |
 | iOS        | `iosArm64`, `iosSimulatorArm64`, `iosX64`             |
 | macOS      | `macosArm64`, `macosX64`                              |
 | tvOS       | `tvosArm64`, `tvosSimulatorArm64`, `tvosX64`          |
@@ -190,7 +191,7 @@ A `value class` wrapping an `Int` code point.
 | Linux      | `linuxArm64`, `linuxX64`                              |
 | Windows    | `mingwX64`                                            |
 
-> **Note:** Only JVM and WasmJS targets are actively tested in CI. Other targets compile and should work correctly, but have not been thoroughly validated.
+> **Note:** Only JVM and WasmJS targets are actively tested in CI. WasmWasi and the other targets compile and should work correctly, but have not been thoroughly validated.
 
 ## JVM compatibility
 
