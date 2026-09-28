@@ -7,6 +7,12 @@ updates:
     labels:
       - internal
       - dependencies
+    groups:
+      # init and analyze are pinned to the same commit SHA and must be bumped
+      # together, otherwise CodeQL fails with a version mismatch.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
 
   - package-ecosystem: "gradle"
     directory: "/"
