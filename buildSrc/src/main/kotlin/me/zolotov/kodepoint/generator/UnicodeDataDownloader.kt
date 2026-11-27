@@ -7,10 +7,19 @@ import kotlin.io.path.exists
 import kotlin.io.path.outputStream
 
 object UnicodeDataDownloader {
-    fun ensureUnicodeFilesDownloaded(cacheDir: Path, version: UnicodeVersion, dataFileNames: List<String>): Path {
-        val dataDir = cacheDir.resolve("unicode-data-$version")
+    fun ensureUnicodeFilesDownloaded(cacheDir: Path, version: UnicodeVersion, dataFileNames: List<String>): Path =
+        ensureFilesDownloaded(cacheDir.resolve("unicode-data-$version"), version.ucdBaseUrl, dataFileNames)
+
+    /**
+     * Downloads the emoji data files that live outside the UCD, under `Public/<version>/emoji/`
+     * (for example `emoji-test.txt`), into their own per-version cache directory.
+     */
+    fun ensureEmojiFilesDownloaded(cacheDir: Path, version: UnicodeVersion, dataFileNames: List<String>): Path =
+        ensureFilesDownloaded(cacheDir.resolve("emoji-data-${version.emojiVersion}"), version.emojiBaseUrl, dataFileNames)
+
+    private fun ensureFilesDownloaded(dataDir: Path, baseUrl: String, dataFileNames: List<String>): Path {
         for (fileName in dataFileNames) {
-            val url = "${version.ucdBaseUrl}/$fileName"
+            val url = "$baseUrl/$fileName"
             val targetFile = dataDir.resolve(fileName)
             if (targetFile.exists()) {
                 println("  Using $fileName from cache")

@@ -19,30 +19,36 @@ class CharacterDataSizeMetrics(
 ) {
     val totalBytes: Int = metrics.first { it.benchmark == CHARACTER_DATA_TOTAL_BENCHMARK }.bytes
 
-    fun writeJson(outputPath: Path) {
-        outputPath.parent?.createDirectories()
-        outputPath.writeText(
-            buildString {
-                appendLine("{")
-                metrics.forEachIndexed { index, metric ->
-                    append("  ")
-                    append(jsonString(metric.benchmark))
-                    appendLine(": {")
-                    append("    ")
-                    append(jsonString(BYTES_MEASURE))
-                    append(": { \"value\": ")
-                    append(metric.bytes)
-                    appendLine(" }")
-                    append("  }")
-                    if (index < metrics.lastIndex) {
-                        append(',')
-                    }
-                    appendLine()
+    fun writeJson(outputPath: Path) = writeSizeMetricsJson(metrics, outputPath)
+}
+
+/**
+ * Writes [metrics] in the benchmark-report shape `{"<name>": {"bytes": {"value": <n>}}}` shared by
+ * every generated-table size report.
+ */
+fun writeSizeMetricsJson(metrics: List<CharacterDataSizeMetric>, outputPath: Path) {
+    outputPath.parent?.createDirectories()
+    outputPath.writeText(
+        buildString {
+            appendLine("{")
+            metrics.forEachIndexed { index, metric ->
+                append("  ")
+                append(jsonString(metric.benchmark))
+                appendLine(": {")
+                append("    ")
+                append(jsonString(BYTES_MEASURE))
+                append(": { \"value\": ")
+                append(metric.bytes)
+                appendLine(" }")
+                append("  }")
+                if (index < metrics.lastIndex) {
+                    append(',')
                 }
-                appendLine("}")
+                appendLine()
             }
-        )
-    }
+            appendLine("}")
+        }
+    )
 }
 
 fun buildCharacterDataSizeMetrics(

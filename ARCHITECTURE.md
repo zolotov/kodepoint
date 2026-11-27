@@ -10,6 +10,7 @@ This document provides a comprehensive overview of how the Kodepoint library sto
 - [Lookup Table Architecture](#lookup-table-architecture)
 - [Code Generation Pipeline](#code-generation-pipeline)
 - [Unicode Script Handling](#unicode-script-handling)
+- [Grapheme Clusters and Emoji](#grapheme-clusters-and-emoji)
 
 ## Core Data Structure
 
@@ -317,6 +318,76 @@ enum class UnicodeScript {
 
 Each returns a byte script ID that maps to `UnicodeScript` enum ordinals.
 
+## Grapheme Clusters and Emoji
+
+The `:graphemes` module (artifact `kodepoint-graphemes`, package `me.zolotov.kodepoint.graphemes`) implements
+UAX #29 extended grapheme clusters and the emoji layer on top of them. Unlike `lib`, it uses its own generated
+tables on **every** target, the JVM included: `java.text.BreakIterator` has extended grapheme clusters only since
+JDK 20 and follows the JDK's Unicode version, so delegating would make results depend on the user's JDK.
+
+### Data Sources
+
+`:graphemes:generateGraphemeData` (`buildSrc/.../generator/graphemes/`) downloads, for `kodepoint.unicodeVersion`,
+into `graphemes/build/unicode-cache/`:
+
+| File                                         | Used for                                                                    |
+|----------------------------------------------|-----------------------------------------------------------------------------|
+| `ucd/auxiliary/GraphemeBreakProperty.txt`    | `Grapheme_Cluster_Break` (GCB)                                              |
+| `ucd/DerivedCoreProperties.txt`              | `Indic_Conjunct_Break` (InCB)                                               |
+| `ucd/emoji/emoji-data.txt`                   | `Extended_Pictographic` and the five UTS #51 emoji properties               |
+| `ucd/auxiliary/GraphemeBreakTest.txt`        | Conformance cases, generated into a `commonTest` source                     |
+| `Public/<version>/emoji/emoji-test.txt`      | Emoji names, groups, subgroups, versions, qualification and the RGI set     |
+
+It writes `GraphemeData`, `EmojiData` and the public `EmojiGroup` enum to `graphemes/build/generated/sources/grapheme-data/`,
+the test cases to `.../grapheme-test-data/`, copies of the data files to the JVM test resources (the exhaustive JVM
+tests parse them independently of the generator), and a size report to `graphemes/build/reports/grapheme-data/metrics.json`
+(`./gradlew :graphemes:graphemeDataMetrics`).
+
+### Property Packing
+
+One value per code point, in the same plane layout as `CharacterData`: a Latin-1 byte table, a two-level BMP block
+table chosen by `findOptimalLookupTable`, and binary-searched ranges for the supplementary planes, all indexing a
+small table of the distinct values (27 in Unicode 18.0; about 16 KB in total).
+
+```
+Bits 0-3:   Grapheme_Cluster_Break (14 values, Other = 0)
+Bits 4-5:   Indic_Conjunct_Break (None, Linker, Consonant, Extend)
+Bit 6:      Extended_Pictographic
+Bits 7-11:  Emoji, Emoji_Presentation, Emoji_Modifier, Emoji_Modifier_Base, Emoji_Component
+```
+
+### Segmentation State Machine
+
+`graphemes/src/commonMain/.../internal/Segmentation.kt` holds the rules. `pairRule(before, after)` decides every rule
+that needs only the two code points around a position (GB3–GB9b, GB999). For the three rules that look further back
+it returns which context to check:
+
+- **GB9c** `ConjunctLinker ConjunctExtender* × LinkingConsonant` – "the text ends with a linker followed by InCB=Extend".
+- **GB11** `ExtPict Extend* ZWJ × ExtPict` – "the ZWJ follows a pictograph and GCB=Extend".
+- **GB12/13** – "an odd number of regional indicators precedes the position".
+
+Forward iteration keeps these as three booleans (plus one for the ZWJ step of GB11) and restarts with an empty state
+at every boundary. That is exact because no context can reach across a boundary: the chains GB9c and GB11 look back
+over consist of characters that GB9 or GB9c themselves join, and a boundary inside a run of regional indicators always
+has an even number of them before it. The generator checks the data facts this relies on (for example that every
+InCB=Extend character is GCB=Extend or ZWJ, and that regional indicators are exactly U+1F1E6..U+1F1FF) and fails if
+an update breaks one. Two ASCII code points always break except CR LF, so ASCII text is segmented without table reads.
+
+A single boundary at an arbitrary index is decided from the two code points around it, scanning back only for the
+context a rule needs. `previousGraphemeClusterBoundary` walks back one code point at a time to the first boundary;
+inside a run of regional indicators it computes the boundary from the run's parity, and the reversed iteration passes
+the run start from one cluster to the next, so walking back over a long run stays linear. `nextGraphemeClusterBoundary`
+finds the start of the cluster containing the index and segments forward from there. `GraphemeClusterSegmenter`
+runs the forward state machine over code points pushed one at a time.
+
+### Emoji Layer
+
+`forEachEmoji` checks each grapheme cluster against the UTS #51 grammar (`internal/EmojiGrammar.kt`), so every
+reported range is also a cluster. `Emoji.lookup` binary-searches all 5,244 lines of `emoji-test.txt`, sorted by UTF-16
+text and concatenated into one string. Each line points at its fully-qualified (or component) entry, which stores
+the name, group, subgroup and version once; the generator checks that the minimally-qualified and unqualified forms
+differ from their entry only by U+FE0F and share its metadata. Entries are materialized as `EmojiInfo` on first use.
+
 ## Module Dependencies
 
 ```
@@ -325,11 +396,14 @@ common (UnicodeScript enum)
 unicode (generated lookup tables)
    ↑
 lib (public API, platform dispatch)
+   ↑ api
+graphemes (grapheme clusters and emoji, own generated tables on all targets)
 ```
 
 - **common**: Shared `UnicodeScript` enum, no platform-specific code
 - **unicode**: Generated data tables, used only by non-JVM platforms
 - **lib**: Public `Codepoint` API, routes to JVM `Character` or `unicode` tables
+- **graphemes**: Grapheme-cluster segmentation and emoji; exposes `Codepoint` in its API, hence the `api` dependency on `lib`
 
 ## Key Source Files
 
@@ -344,3 +418,6 @@ lib (public API, platform dispatch)
 | `buildSrc/.../generator/PropertiesTableBuilder.kt`        | Table construction                      |
 | `buildSrc/.../generator/LookupTableBuilder.kt`            | Two-level index optimization            |
 | `buildSrc/.../generator/UnicodeDataParser.kt`             | Unicode file parsing                    |
+| `graphemes/src/commonMain/.../internal/Segmentation.kt`   | UAX #29 rules and boundary search       |
+| `graphemes/src/commonMain/.../internal/EmojiGrammar.kt`   | UTS #51 emoji sequence grammar          |
+| `buildSrc/.../generator/graphemes/`                       | Grapheme and emoji table generation     |

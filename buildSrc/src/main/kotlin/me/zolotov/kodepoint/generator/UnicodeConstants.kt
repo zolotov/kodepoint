@@ -11,6 +11,18 @@ value class UnicodeVersion(val value: String) {
     val ucdBaseUrl: String
         get() = "https://www.unicode.org/Public/$value/ucd"
 
+    /** The emoji version matching this Unicode version: its major.minor part, e.g. `18.0` for `18.0.0`. */
+    val emojiVersion: String
+        get() = value.substringBeforeLast('.')
+
+    /**
+     * Where the emoji files that are not part of the UCD, such as `emoji-test.txt`, are published:
+     * `Public/<version>/emoji/` next to `ucd/`, as the Unicode publishing script `pub/copy-final.sh`
+     * of unicode-org/unicodetools lays them out.
+     */
+    val emojiBaseUrl: String
+        get() = "https://www.unicode.org/Public/$value/emoji"
+
     override fun toString(): String = value
 }
 

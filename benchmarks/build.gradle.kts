@@ -46,6 +46,7 @@ kotlin {
                 implementation(project(":kodepoint"))
                 implementation(project(":unicode"))
                 implementation(project(":common"))
+                implementation(project(":graphemes"))
             }
         }
     }
