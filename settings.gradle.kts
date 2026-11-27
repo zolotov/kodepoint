@@ -21,4 +21,5 @@ include(":common")
 include(":lib")
 project(":lib").name = "kodepoint"
 include(":unicode")
+include(":graphemes")
 include(":benchmarks")

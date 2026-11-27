@@ -1,7 +1,7 @@
 ## Releases
 
 Releases are tagged and published as the bare version, e.g. `2.0.0`, and cover the `kodepoint`,
-`unicode` and `common` artifacts together. The changelog lives in [`CHANGELOG.md`](./CHANGELOG.md).
+`kodepoint-graphemes`, `unicode` and `common` artifacts together. The changelog lives in [`CHANGELOG.md`](./CHANGELOG.md).
 
 ### Changelog
 
@@ -31,6 +31,6 @@ the GitHub release, publishes to Maven Central, and commits the changelog togeth
 docs. Nothing is generated at release time, and an empty `Unreleased` section fails the release
 before anything is published.
 
-The same workflow runs `updateReadmeVersion`, which rewrites the dependency coordinates in
-`README.md` and `llms.txt` to the version being released, so the install snippets always name a
-version that exists.
+The same workflow runs `updateReadmeVersion`, which rewrites the dependency coordinates of
+`kodepoint` and `kodepoint-graphemes` in `README.md` and `llms.txt` to the version being released, so
+the install snippets always name a version that exists.

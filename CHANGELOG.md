@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- New artifact `me.zolotov.kodepoint:kodepoint-graphemes` (package `me.zolotov.kodepoint.graphemes`)
+  for extended grapheme clusters (UAX #29), the characters a user perceives: `e` + U+0301, 👨‍👩‍👧, 🇺🇦,
+  क्ष and `\r\n` are one cluster each. `forEachGraphemeCluster` and `forEachGraphemeClusterReversed`
+  iterate them without allocating, `graphemeClusterCount()` counts them, `isGraphemeClusterBoundary`,
+  `nextGraphemeClusterBoundary` and `previousGraphemeClusterBoundary` answer for any index, and
+  `GraphemeClusterSegmenter` segments streamed code points. It follows the Unicode 18.0.0 rules on
+  every target, the JVM included, and passes all 853 cases of the official `GraphemeBreakTest.txt`.
+- The same artifact adds `Codepoint.getGraphemeClusterBreak()`, `getIndicConjunctBreak()`,
+  `isExtendedPictographic()` and the UTS #51 emoji properties (`isEmoji()`, `isEmojiPresentation()`,
+  `isEmojiModifier()`, `isEmojiModifierBase()`, `isEmojiComponent()`), `forEachEmoji` to find emoji
+  sequences and their kind, and `Emoji.lookup` / `isRgi` / `all` with the names, groups, subgroups
+  and versions of the 3,972 RGI emoji of `emoji-test.txt` 18.0.
+
 ## [4.0.0] - 2026-09-17
 
 ### Breaking

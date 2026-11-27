@@ -20,6 +20,9 @@ that can run `./gradlew` and publish a directory of static files.
 # CharacterData size metrics
 ./gradlew :unicode:characterDataMetrics
 
+# Grapheme and emoji table size metrics
+./gradlew :graphemes:graphemeDataMetrics
+
 # CI-style aggregate report + Pages bundle
 ./gradlew :benchmarks:ciBenchmark
 
@@ -54,6 +57,11 @@ Gradle properties understood by `ciBenchmark`:
 - Greek (U+0370-03FF)
 - CJK ideographs (U+4E00-4E7F)
 - Mixed workloads (80/20, 50/50, 20/80 ASCII/Unicode ratios)
+
+**GraphemeClusterBenchmark** - Grapheme-cluster segmentation (`:graphemes`):
+- `graphemeClusterCount` over ASCII (the table-free fast path) and over mixed text
+- `forEachGraphemeCluster`, `forEachGraphemeClusterReversed` and `forEachEmoji` over mixed text:
+  ASCII, Latin with combining marks, CJK, emoji ZWJ sequences, modifiers and flags
 
 **JvmComparisonBenchmark** - Direct comparison with `java.lang.Character`:
 - `isLetter`, `isDigit`, `toLowerCase`, `toUpperCase`

@@ -37,12 +37,14 @@ Reach for Kodepoint whenever you're in Kotlin Multiplatform / `commonMain` and n
 - **"How do I check if a character is a letter/digit/uppercase in Kotlin common code?"** → `Codepoint(c).isLetter()`, `.isDigit()`, `.isUpperCase()` – the `java.lang.Character` equivalents, but multiplatform.
 - **"How do I uppercase/lowercase a code point in KMP?"** → `codepoint.toUpperCase()` / `.toLowerCase()`.
 - **"How do I iterate a string by Unicode code point without breaking emoji?"** → `text.forEachCodepoint { ... }` (surrogate-safe, unlike `for (c in text)`).
-- **"How do I count real characters when a string contains emoji or CJK?"** → count with `forEachCodepoint` instead of `.length`.
+- **"How do I count real characters when a string contains emoji or CJK?"** → `text.graphemeClusterCount()` from [`kodepoint-graphemes`](#grapheme-clusters--emoji) counts what users see as one character (👨‍👩‍👧, 🇺🇦, é), `forEachCodepoint` counts code points.
+- **"How do I split a string into user-perceived characters, or move a cursor by one, in KMP?"** → `forEachGraphemeCluster`, `nextGraphemeClusterBoundary` / `previousGraphemeClusterBoundary` ([grapheme clusters](#grapheme-clusters--emoji)).
+- **"How do I find emoji in a string, or get an emoji's name?"** → `forEachEmoji`, `Emoji.lookup("😀")?.name` ([emoji](#grapheme-clusters--emoji)).
 - **"How do I get a character's Unicode script or general category in common code?"** → `codepoint.getUnicodeScript()` / `.getCategory()`.
 - **"How do I append a supplementary code point (above U+FFFF) to a `StringBuilder`?"** → `sb.appendCodePoint(codepoint)`.
 - **"How do I validate Java/Unicode identifiers in KMP?"** → `.isJavaIdentifierStart()`, `.isUnicodeIdentifierPart()`, etc.
 
-Kodepoint covers code-point-level UCD properties. It is **not** an ICU replacement – for locale-aware collation, Unicode normalization (NFC/NFD), bidi, or grapheme-cluster segmentation, use a dedicated text library.
+Kodepoint covers code-point-level UCD properties and, in the separate `kodepoint-graphemes` artifact, extended grapheme-cluster segmentation (UAX #29) and emoji. It is **not** an ICU replacement – for locale-aware collation, Unicode normalization (NFC/NFD), bidi, or word, sentence and line breaking, use a dedicated text library.
 
 ## Installation
 
@@ -111,6 +113,76 @@ sb.appendCodePoint('!'.code)
 sb.toString()   // "👍!"
 ```
 
+## Grapheme clusters & emoji
+
+What a user sees as one character is often several code points: `e` + U+0301 is é, 👨‍👩‍👧 is five code points
+joined by U+200D, 🇺🇦 is two regional indicators, क्ष is three code points. Unicode calls these units
+*extended grapheme clusters* (UAX #29). The `kodepoint-graphemes` artifact finds them, and identifies the
+clusters that are emoji:
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("me.zolotov.kodepoint:kodepoint-graphemes:4.0.0")
+}
+```
+
+```kotlin
+import me.zolotov.kodepoint.graphemes.*
+
+val text = "Hi 👋🏽 👨‍👩‍👧 🇺🇦"
+text.length                       // 21 UTF-16 chars
+text.graphemeClusterCount()       // 8: H, i, space, 👋🏽, space, 👨‍👩‍👧, space, 🇺🇦
+text.graphemeClusters().toList()  // ["H", "i", " ", "👋🏽", " ", "👨‍👩‍👧", " ", "🇺🇦"]
+
+// Allocation-free iteration over UTF-16 ranges, in both directions.
+text.forEachGraphemeCluster { start, end -> /* text.substring(start, end) */ }
+text.forEachGraphemeClusterReversed { start, end -> }
+
+// Move a cursor by one user-perceived character.
+text.nextGraphemeClusterBoundary(3)      // 7: past 👋🏽
+text.previousGraphemeClusterBoundary(7)  // 3
+text.isGraphemeClusterBoundary(4)        // false: inside 👋🏽
+
+// Emoji in a text, and their metadata.
+text.forEachEmoji { start, end, kind -> println("$start..<$end $kind") }  // 3..<7 MODIFIER, 8..<16 ZWJ, 17..<21 FLAG
+Emoji.lookup("👋🏽")?.name          // "waving hand: medium skin tone"
+Emoji.lookup("☺")?.fullyQualified   // "☺️" (the lookup was UNQUALIFIED)
+Emoji.isRgi("🇦🇦")                  // false: a well-formed flag sequence, but no region
+```
+
+The segmentation follows the Unicode 18.0.0 rules on **every target, the JVM included**: unlike the
+`Codepoint` queries, which delegate to `java.lang.Character` on the JVM, this module always uses its own
+generated tables. `java.text.BreakIterator` only implements extended grapheme clusters since JDK 20 and
+follows the JDK's Unicode version (16.0 on JDK 24 and 25), so results would otherwise depend on the
+user's JDK.
+
+| API                                                                        | Description                                                                         |
+|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `CharSequence.forEachGraphemeCluster { start, end -> }`                    | Clusters left to right, as UTF-16 ranges (`inline`, allocation-free).               |
+| `CharSequence.forEachGraphemeClusterReversed { start, end -> }`            | The same clusters, right to left.                                                   |
+| `CharSequence.graphemeClusterCount()`                                      | Number of clusters.                                                                 |
+| `CharSequence.graphemeClusters()`                                          | `Sequence<String>` of the clusters (allocates).                                     |
+| `CharSequence.isGraphemeClusterBoundary(index)`                            | Whether a cluster starts or ends at `index` in `0..length`.                         |
+| `CharSequence.nextGraphemeClusterBoundary(index)` / `previous…(index)`     | Nearest boundary after / before `index`.                                            |
+| `GraphemeClusterSegmenter().isBoundaryBefore(codepoint)`                   | Streaming segmentation of code points that are not in a `CharSequence`.             |
+| `Codepoint.getGraphemeClusterBreak()` / `.getIndicConjunctBreak()`         | The `Grapheme_Cluster_Break` and `Indic_Conjunct_Break` properties.                 |
+| `Codepoint.isExtendedPictographic()`, `.isEmoji()`, `.isEmojiPresentation()`, `.isEmojiModifier()`, `.isEmojiModifierBase()`, `.isEmojiComponent()` | The UTS #51 emoji properties. |
+| `CharSequence.forEachEmoji { start, end, kind -> }`                        | Clusters that are well-formed emoji sequences, with their `EmojiSequenceKind`.      |
+| `CharSequence.isEmojiSequence()`                                           | Whether the whole text is one emoji sequence.                                       |
+| `Emoji.lookup(sequence)`                                                   | `EmojiInfo` (name, group, subgroup, version, status) of any `emoji-test.txt` line.  |
+| `Emoji.isRgi(sequence)` / `Emoji.all()`                                    | The RGI emoji set: fully-qualified emoji and components.                            |
+| `Graphemes.UNICODE_VERSION` / `Emoji.VERSION`                              | `18.0.0` / `18.0`.                                                                  |
+
+`forEachEmoji` follows the UTS #51 grammar, in which a single character with the `Emoji` property is
+an emoji sequence even when it is shown as text by default, so it also reports the digits, `#`, `*`, `©`
+and `®`. Check `Codepoint.isEmojiPresentation()` or `Emoji.isRgi` to narrow the result.
+
+Legacy grapheme clusters, tailorings, display width, and word, sentence and line breaking are out of
+scope. The segmentation tables take about 16 KB. The emoji metadata is larger: about 110,000 characters of
+names plus the sequences, about 340 KB once loaded as UTF-16 strings, and it is only loaded when `Emoji`
+is first used. `./gradlew :graphemes:graphemeDataMetrics` reports the size of every generated table.
+
 ## API reference
 
 ### `Codepoint`
@@ -170,7 +242,7 @@ A `value class` wrapping an `Int` code point.
 
 |                                 |                                                                                      |
 |---------------------------------|--------------------------------------------------------------------------------------|
-| **Unicode version**             | 18.0.0 on non-JVM targets; the running JDK's on the JVM – see [Unicode version](#unicode-version) |
+| **Unicode version**             | 18.0.0 on non-JVM targets; the running JDK's on the JVM – see [Unicode version](#unicode-version). `kodepoint-graphemes`: 18.0.0 everywhere |
 | **Kotlin API/language version** | 2.1+                                                                                 |
 | **Minimum consumer Kotlin**     | 2.1 on the JVM, 2.2 for all other targets (built with Kotlin 2.2.20)                 |
 | **JVM bytecode target**         | 11                                                                                   |
@@ -249,11 +321,12 @@ JVM includes U+2E2F (VERTICAL TILDE) for backward compatibility, but this charac
 
 ## How it works
 
-Kodepoint is split into three modules:
+Kodepoint is split into four modules:
 
 - **`lib`** (`me.zolotov.kodepoint:kodepoint`) – the public API: the `Codepoint` value class plus `CharSequence`/`Appendable` extensions, with platform-specific implementations.
 - **`unicode`** – generated Unicode property lookup tables used by non-JVM targets.
 - **`common`** – the `UnicodeScript` enum shared across modules.
+- **`graphemes`** (`me.zolotov.kodepoint:kodepoint-graphemes`) – grapheme-cluster segmentation and emoji, with its own generated tables on every target.
 
 For a deep dive into data storage, lookup-table layout, and platform implementations, see [ARCHITECTURE.md](ARCHITECTURE.md).
 

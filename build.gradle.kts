@@ -39,6 +39,6 @@ tasks.register<UpdateReadmeVersionTask>("updateReadmeVersion") {
     group = "release"
     description = "Points the dependency snippets in README.md and llms.txt at the version being released."
     files.from("README.md", "llms.txt")
-    coordinate = "me.zolotov.kodepoint:kodepoint"
+    coordinates = listOf("me.zolotov.kodepoint:kodepoint", "me.zolotov.kodepoint:kodepoint-graphemes")
     version = project.version.toString()
 }
