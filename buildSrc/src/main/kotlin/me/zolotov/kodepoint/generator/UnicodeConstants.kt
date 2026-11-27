@@ -15,9 +15,13 @@ value class UnicodeVersion(val value: String) {
     val emojiVersion: String
         get() = value.substringBeforeLast('.')
 
-    /** Where the emoji files that are not part of the UCD, such as `emoji-test.txt`, are published. */
+    /**
+     * Where the emoji files that are not part of the UCD, such as `emoji-test.txt`, are published:
+     * `Public/<version>/emoji/` next to `ucd/`, as the Unicode publishing script `pub/copy-final.sh`
+     * of unicode-org/unicodetools lays them out.
+     */
     val emojiBaseUrl: String
-        get() = "https://www.unicode.org/Public/emoji/$emojiVersion"
+        get() = "https://www.unicode.org/Public/$value/emoji"
 
     override fun toString(): String = value
 }

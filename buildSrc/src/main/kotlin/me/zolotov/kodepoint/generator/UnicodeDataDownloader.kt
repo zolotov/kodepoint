@@ -11,7 +11,7 @@ object UnicodeDataDownloader {
         ensureFilesDownloaded(cacheDir.resolve("unicode-data-$version"), version.ucdBaseUrl, dataFileNames)
 
     /**
-     * Downloads the emoji data files that live outside the UCD, under `Public/emoji/<major.minor>/`
+     * Downloads the emoji data files that live outside the UCD, under `Public/<version>/emoji/`
      * (for example `emoji-test.txt`), into their own per-version cache directory.
      */
     fun ensureEmojiFilesDownloaded(cacheDir: Path, version: UnicodeVersion, dataFileNames: List<String>): Path =

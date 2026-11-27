@@ -336,7 +336,7 @@ into `graphemes/build/unicode-cache/`:
 | `ucd/DerivedCoreProperties.txt`              | `Indic_Conjunct_Break` (InCB)                                               |
 | `ucd/emoji/emoji-data.txt`                   | `Extended_Pictographic` and the five UTS #51 emoji properties               |
 | `ucd/auxiliary/GraphemeBreakTest.txt`        | Conformance cases, generated into a `commonTest` source                     |
-| `Public/emoji/<major.minor>/emoji-test.txt`  | Emoji names, groups, subgroups, versions, qualification and the RGI set     |
+| `Public/<version>/emoji/emoji-test.txt`      | Emoji names, groups, subgroups, versions, qualification and the RGI set     |
 
 It writes `GraphemeData`, `EmojiData` and the public `EmojiGroup` enum to `graphemes/build/generated/sources/grapheme-data/`,
 the test cases to `.../grapheme-test-data/`, copies of the data files to the JVM test resources (the exhaustive JVM
